@@ -1,18 +1,21 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
-import { toast } from "react-toastify";
 
 const Login = () => {
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
+  const { setToken, navigate, backendUrl } = useContext(ShopContext);
   const [currentState, setCurrentState] = useState("Login");
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
       if (currentState === "Sign Up") {
         const res = await axios.post(backendUrl + "/api/user/register", {
@@ -24,8 +27,9 @@ const Login = () => {
         if (res.data.success) {
           setToken(res.data.token);
           localStorage.setItem("token", res.data.token);
+          navigate("/");
         } else {
-          toast.error(res.data.message);
+          setError(res.data.message || "Signup failed");
         }
       } else {
         const res = await axios.post(backendUrl + "/api/user/login", {
@@ -36,21 +40,17 @@ const Login = () => {
         if (res.data.success) {
           setToken(res.data.token);
           localStorage.setItem("token", res.data.token);
+          navigate("/");
         } else {
-          toast.error(res.data.message);
+          setError(res.data.message || "Invalid email or password");
         }
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.message);
+      setError(error.response?.data?.message || error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
-  }, [token]);
 
   return (
     <form
@@ -91,18 +91,27 @@ const Login = () => {
         value={password}
       />
 
+      {error && (
+        <div className="w-full text-red-600 text-sm -mt-2">{error}</div>
+      )}
+
       <div className="w-full flex justify-between text-sm mt-[-8px]">
-        
         {currentState === "Login" ? (
           <p
-            onClick={() => setCurrentState("Sign Up")}
+            onClick={() => {
+              setCurrentState("Sign Up");
+              setError("");
+            }}
             className="cursor-pointer"
           >
             Create account
           </p>
         ) : (
           <p
-            onClick={() => setCurrentState("Login")}
+            onClick={() => {
+              setCurrentState("Login");
+              setError("");
+            }}
             className="cursor-pointer"
           >
             Login Here{" "}
@@ -110,8 +119,8 @@ const Login = () => {
         )}
       </div>
 
-      <button className="bg-black text-white font-light px-8 py-2 mt-4">
-        {currentState === "Login" ? "Sign In" : "Sign Up"}
+      <button disabled={loading} className="bg-black text-white font-light px-8 py-2 mt-4 disabled:opacity-60">
+        {loading ? (currentState === "Login" ? "Signing In..." : "Signing Up...") : (currentState === "Login" ? "Sign In" : "Sign Up")}
       </button>
     </form>
   );

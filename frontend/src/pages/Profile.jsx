@@ -4,7 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const Profile = () => {
-  const { token } = useContext(ShopContext);
+  const { token, backendUrl } = useContext(ShopContext);
   const [userData, setUserData] = useState({
     name: "",
     email: "",
@@ -17,8 +17,6 @@ const Profile = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const backendUrl = import.meta.env.VITE_API_URL;
-        console.log("Fetching profile with token:", token);
         
         const response = await axios.get(
           `${backendUrl}/api/user/profile`,
@@ -27,15 +25,15 @@ const Profile = () => {
           }
         );
         
-        console.log("Profile data received:", response.data);
-        
-        if (response.data) {
+        if (response.data?.success && response.data.user) {
           setUserData({
-            name: response.data.name || "",
-            email: response.data.email || "",
-            phone: response.data.phone || "",
-            address: response.data.address || ""
+            name: response.data.user.name || "",
+            email: response.data.user.email || "",
+            phone: response.data.user.phone || "",
+            address: response.data.user.address || ""
           });
+        } else {
+          toast.error(response.data?.message || "Failed to load profile data");
         }
         setLoading(false);
       } catch (error) {
@@ -50,7 +48,7 @@ const Profile = () => {
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, backendUrl]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,8 +61,6 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const backendUrl = import.meta.env.VITE_API_URL;
-      toast.info("Updating profile...");
       
       const response = await axios.put(
         `${backendUrl}/api/user/profile`,
@@ -73,8 +69,6 @@ const Profile = () => {
           headers: { token }
         }
       );
-      
-      console.log("Profile update response:", response.data);
       
       if (response.data.success) {
         toast.success("Profile updated successfully");
