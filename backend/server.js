@@ -4,15 +4,16 @@ import "dotenv/config";
 import connectDB from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudinary.js";
 import userRouter from "./routes/userRoutes.js";
-import productRouter from "./routes/productRoute.js";
-import cartRouter from "./routes/cartRoute.js";
-import orderRouter from "./routes/orderRoute.js";
-import bannerRouter from "./routes/bannerRoute.js";
-import sectionRouter from "./routes/sectionRoute.js";
-import pageContentRouter from "./routes/pageContentRoute.js";
-import discountRouter from "./routes/discountRoute.js";
-import categoryRouter from "./routes/categoryRoute.js";
-import sizeRouter from "./routes/sizeRoute.js";
+import productRouter from "./routes/productRoutes.js";
+import cartRouter from "./routes/cartRoutes.js";
+import orderRouter from "./routes/orderRoutes.js";
+import bannerRouter from "./routes/bannerRoutes.js";
+import sectionRouter from "./routes/sectionRoutes.js";
+import pageContentRouter from "./routes/pageContentRoutes.js";
+import discountRouter from "./routes/discountRoutes.js";
+import categoryRouter from "./routes/categoryRoutes.js";
+import sizeRouter from "./routes/sizeRoutes.js";
+import wishlistRouter from "./routes/wishlistRoutes.js";
 
 //App Config
 const app = express();
