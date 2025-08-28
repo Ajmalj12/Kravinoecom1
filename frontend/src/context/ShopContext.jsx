@@ -17,6 +17,7 @@ const ShopContextProvider = (props) => {
   });
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
+  const [pageContent, setPageContent] = useState({}); // { page: { key: value } }
 
   const navigate = useNavigate();
 
@@ -145,8 +146,22 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  const fetchPageContent = async (page) => {
+    try {
+      const res = await axios.get(backendUrl + "/api/page/list", { params: { page } });
+      if (res.data.success) {
+        const map = {};
+        res.data.items.forEach((i) => { map[i.key] = i.value; });
+        setPageContent((prev) => ({ ...prev, [page]: map }));
+      }
+    } catch (e) { /* ignore */ }
+  };
+
   useEffect(() => {
     getProductsData();
+    fetchPageContent('about');
+    fetchPageContent('contact');
+    fetchPageContent('global');
   }, []);
 
   useEffect(() => {
@@ -174,6 +189,8 @@ const ShopContextProvider = (props) => {
     token,
     setToken,
     setCartItems,
+    pageContent,
+    fetchPageContent,
   };
 
   return (

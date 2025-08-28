@@ -7,6 +7,9 @@ import userRouter from "./routes/userRoutes.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
+import bannerRouter from "./routes/bannerRoute.js";
+import sectionRouter from "./routes/sectionRoute.js";
+import pageContentRouter from "./routes/pageContentRoute.js";
 
 //App Config
 const app = express();
@@ -22,6 +25,9 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
+app.use("/api/banner", bannerRouter);
+app.use("/api/section", sectionRouter);
+app.use("/api/page", pageContentRouter);
 
 app.get("/", (req, res) => {
   res.send("IT'S WORKING WOWWWW");

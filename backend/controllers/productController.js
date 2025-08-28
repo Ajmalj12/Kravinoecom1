@@ -91,3 +91,60 @@ export const singleProduct = async (req, res) => {
     res.json({ success: false, message: e.message });
   }
 };
+
+// add a review to a product
+export const addReview = async (req, res) => {
+  try {
+    const { productId, rating, comment } = req.body;
+    const userId = req.user._id;
+    const userName = req.body.userName || "Anonymous";
+
+    if (!productId || !rating || !comment) {
+      return res.json({ success: false, message: "Missing required fields" });
+    }
+
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+
+    // prevent duplicate reviews by the same user
+    const existing = product.reviews.find(r => String(r.user) === String(userId));
+    if (existing) {
+      return res.json({ success: false, message: "You have already reviewed this product" });
+    }
+
+    product.reviews.push({
+      user: userId,
+      name: userName,
+      rating: Number(rating),
+      comment,
+    });
+
+    // recompute rating avg and count
+    product.ratingCount = product.reviews.length;
+    product.ratingAverage = product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.ratingCount;
+
+    await product.save();
+
+    res.json({ success: true, message: "Review added", reviews: product.reviews, ratingAverage: product.ratingAverage, ratingCount: product.ratingCount });
+  } catch (e) {
+    console.log(e);
+    res.json({ success: false, message: e.message });
+  }
+};
+
+// get reviews for a product
+export const listReviews = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await productModel.findById(productId).select("reviews ratingAverage ratingCount");
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+    res.json({ success: true, reviews: product.reviews, ratingAverage: product.ratingAverage, ratingCount: product.ratingCount });
+  } catch (e) {
+    console.log(e);
+    res.json({ success: false, message: e.message });
+  }
+};

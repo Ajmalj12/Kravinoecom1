@@ -4,10 +4,13 @@ import {
   listProduct,
   removeProduct,
   singleProduct,
+  addReview,
+  listReviews,
 } from "../controllers/productController.js";
 import upload from "../middleware/multer.js";
 import adminAuth from "../middleware/adminAuth.js";
 import Product from "../models/productModel.js";
+import authUser from "../middleware/auth.js";
 
 const productRouter = express.Router();
 
@@ -54,6 +57,14 @@ productRouter.post("/update", adminAuth, async (req, res) => {
     console.error("Error updating product:", error);
     res.status(500).json({ success: false, message: "Failed to update product" });
   }
+});
+
+// Reviews
+productRouter.get("/:productId/reviews", listReviews);
+productRouter.post("/:productId/reviews", authUser, async (req, res) => {
+  // delegate to controller using body to keep existing signature
+  req.body.productId = req.params.productId;
+  return addReview(req, res);
 });
 
 export default productRouter;

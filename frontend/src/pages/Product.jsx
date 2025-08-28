@@ -4,13 +4,30 @@ import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
 import RelatedProduct from "../components/RelatedProduct";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, cartItems, addToCart } = useContext(ShopContext);
+  const { products, currency, cartItems, addToCart, token, backendUrl } = useContext(ShopContext);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [ratingAverage, setRatingAverage] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const renderStars = (value) => {
+    const full = Math.round(value); // simple rounding to nearest whole star
+    return (
+      <span className="inline-flex items-center gap-1">
+        {[1,2,3,4,5].map((i) => (
+          <img key={i} src={i <= full ? assets.star_icon : assets.star_dull_icon} className="w-4 h-4" alt={i <= full ? "star" : "star empty"} />
+        ))}
+      </span>
+    );
+  };
 
   const fetchProductData = async () => {
     products.map((item) => {
@@ -28,9 +45,61 @@ const Product = () => {
     });
   };
 
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/api/product/${productId}/reviews`);
+      if (res.data.success) {
+        setReviews(res.data.reviews || []);
+        setRatingAverage(res.data.ratingAverage || 0);
+        setRatingCount(res.data.ratingCount || 0);
+      }
+    } catch (e) {
+      // ignore silently for now
+    }
+  };
+
   useEffect(() => {
     fetchProductData();
+    fetchReviews();
   }, [productId]);
+
+  // Scroll to top whenever product changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, [productId]);
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    if (!token) {
+      toast.error("Please login to add a review");
+      return;
+    }
+    if (!newReview.comment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+    try {
+      setSubmittingReview(true);
+      const res = await axios.post(
+        `${backendUrl}/api/product/${productId}/reviews`,
+        { rating: Number(newReview.rating), comment: newReview.comment },
+        { headers: { token } }
+      );
+      if (res.data.success) {
+        toast.success("Review added");
+        setNewReview({ rating: 5, comment: "" });
+        setReviews(res.data.reviews || []);
+        setRatingAverage(res.data.ratingAverage || 0);
+        setRatingCount(res.data.ratingCount || 0);
+      } else {
+        toast.error(res.data.message || "Failed to add review");
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.message);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   return productData ? (
     <div className="border-t-2 pt-6 md:pt-10 px-4 md:px-6 lg:px-8 transition-opacity ease-in duration-500 opacity-100">
@@ -58,13 +127,9 @@ const Product = () => {
         {/* PRODUCT INFO */}
         <div className="flex-1 mt-6 md:mt-0">
           <h1 className="font-medium text-xl md:text-2xl my-2">{productData.name}</h1>
-          <div className="flex items-center gap-1 mt-2">
-            <img className="w-3.5" src={assets.star_icon} alt="Star rating" />
-            <img className="w-3.5" src={assets.star_icon} alt="Star rating" />
-            <img className="w-3.5" src={assets.star_icon} alt="Star rating" />
-            <img className="w-3.5" src={assets.star_icon} alt="Star rating" />
-            <img className="w-3.5" src={assets.star_dull_icon} alt="Star rating" />
-            <p className="pl-2 text-sm">(122)</p>
+          <div className="flex items-center gap-2 mt-2">
+            {renderStars(ratingAverage)}
+            <span className="text-sm text-gray-600">{ratingAverage.toFixed(1)} ({ratingCount})</span>
           </div>
           <p className="mt-4 md:mt-5 text-2xl md:text-3xl font-medium">
             {currency}
@@ -113,11 +178,69 @@ const Product = () => {
         </div>
       </div>
 
+      {/* REVIEWS */}
+      <div className="mt-10 md:mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-3">Customer Reviews</h2>
+          {reviews.length === 0 ? (
+            <p className="text-gray-500 text-sm">No reviews yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((r, idx) => (
+                <div key={idx} className="border rounded p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-sm">{r.name}</span>
+                    <span className="text-xs text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {renderStars(r.rating)}
+                    <span className="text-xs text-gray-600">{r.rating}/5</span>
+                  </div>
+                  <p className="text-sm mt-1 text-gray-700">{r.comment}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-3">Write a Review</h2>
+          <form onSubmit={submitReview} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Rating</label>
+              <select
+                value={newReview.rating}
+                onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
+                className="border px-3 py-2"
+              >
+                {[5,4,3,2,1].map(v => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Comment</label>
+              <textarea
+                value={newReview.comment}
+                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                className="w-full border px-3 py-2"
+                rows={3}
+                placeholder="Share your thoughts about this product"
+              />
+            </div>
+            <button disabled={submittingReview} className="bg-black text-white px-6 py-2 text-sm rounded disabled:opacity-60">
+              {submittingReview ? "Submitting..." : "Submit Review"}
+            </button>
+          </form>
+        </div>
+      </div>
+
       {/* DISPLAY RELATED PRODUCTS */}
       <div className="mt-10 md:mt-16">
         <RelatedProduct
           category={productData.category}
           subCategory={productData.subCategory}
+          excludeId={productId}
         />
       </div>
     </div>

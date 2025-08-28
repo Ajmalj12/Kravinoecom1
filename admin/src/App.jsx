@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import Login from "./components/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Banners from "./pages/Banners";
+import Content from "./pages/Content";
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = "$";
@@ -41,6 +43,8 @@ const App = () => {
                 <Route path="/list" element={<List token={token} />} />
                 <Route path="/order" element={<Order token={token} />} />
                 <Route path="/users" element={<Users token={token} />} />
+                <Route path="/banners" element={<Banners token={token} />} />
+                <Route path="/content" element={<Content token={token} />} />
               </Routes>
             </div>
           </div>

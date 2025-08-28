@@ -3,7 +3,7 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
 
-const RelatedProduct = ({ category, subCategory }) => {
+const RelatedProduct = ({ category, subCategory, excludeId }) => {
   const { products } = useContext(ShopContext);
   const [related, setRelated] = useState([]);
 
@@ -16,9 +16,13 @@ const RelatedProduct = ({ category, subCategory }) => {
         (item) => subCategory === item.subCategory
       );
 
+      if (excludeId) {
+        productCopy = productCopy.filter((item) => item._id !== excludeId);
+      }
+
       setRelated(productCopy.slice(0, 5));
     }
-  }, [products]);
+  }, [products, category, subCategory, excludeId]);
 
   return (
     <div className="my-24">
