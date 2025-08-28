@@ -5,7 +5,7 @@ import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 
 const Collection = () => {
-  const { products, search, setSearch } = useContext(ShopContext);
+  const { products, search, setSearch, categories } = useContext(ShopContext);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
@@ -53,8 +53,8 @@ const Collection = () => {
     setFilterProducts(productsCopy);
   };
 
-  const sortProduct = () => {
-    let fpCopy = [...filterProducts]; // Create a proper copy to avoid mutation issues
+  const sortProduct = (productsToSort) => {
+    let fpCopy = [...productsToSort];
 
     switch (sortType) {
       case "low-high":
@@ -66,30 +66,37 @@ const Collection = () => {
     }
   };
 
-  // Apply initial filter
+  // Apply filter and sort
   useEffect(() => {
-    applyFilter();
-  }, [category, subCategory, search, products]);
-  
-  // Apply sorting whenever filter results or sort type changes
-  useEffect(() => {
-    if (filterProducts.length > 0) {
-      const sortedProducts = sortProduct();
-      // Use a different setter approach to avoid infinite loops
-      setFilterProducts(prev => {
-        // Only update if the sort actually changed something
-        if (JSON.stringify(prev) !== JSON.stringify(sortedProducts)) {
-          return sortedProducts;
-        }
-        return prev;
-      });
+    let productsCopy = products.slice();
+
+    if (search) {
+      productsCopy = productsCopy.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+      );
     }
-  }, [sortType]);
+
+    if (category.length > 0) {
+      productsCopy = productsCopy.filter((item) =>
+        category.includes(item.category)
+      );
+    }
+
+    if (subCategory.length > 0) {
+      productsCopy = productsCopy.filter((item) =>
+        subCategory.includes(item.subCategory)
+      );
+    }
+
+    // Apply sorting to filtered products
+    const sortedProducts = sortProduct(productsCopy);
+    setFilterProducts(sortedProducts);
+  }, [category, subCategory, search, products, sortType]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-6 sm:pt-10 border-t bg-white px-3 sm:px-0">
       {/* FILTER OPTIONS */}
-      <div className="min-w-60">
+      <div className="min-w-60 sm:sticky sm:top-4 sm:self-start">
         <p
           onClick={() => setShowFilter(!showFilter)}
           className="my-2 text-xl flex items-center cursor-pointer gap-2 justify-between sm:justify-start border-b pb-2 sm:border-0 sm:pb-0"
@@ -101,81 +108,51 @@ const Collection = () => {
             alt=""
           />
         </p>
-        {/* CATEGORY FILTER */}
-        <div
-          className={`border border-gray-300 pl-5 py-3 mt-3 sm:mt-6 ${showFilter ? "" : "hidden"} sm:block rounded-md shadow-sm`}
-        >
-          <p className="mb-3 text-sm font-medium">CATEGORIES</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Men"}
-                onChange={toggleCategory}
-                id="men-category"
-              />{" "}
-              <label htmlFor="men-category" className="cursor-pointer">Men</label>
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Women"}
-                onChange={toggleCategory}
-                id="women-category"
-              />{" "}
-              <label htmlFor="women-category" className="cursor-pointer">Women</label>
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Kids"}
-                onChange={toggleCategory}
-                id="kids-category"
-              />{" "}
-              <label htmlFor="kids-category" className="cursor-pointer">Kids</label>
-            </p>
+        
+        {/* Filter Container with Scroll */}
+        <div className={`${showFilter ? "" : "hidden"} sm:block max-h-[70vh] overflow-y-auto`}>
+          {/* CATEGORY FILTER */}
+          <div className="border border-gray-300 pl-5 py-3 mt-3 sm:mt-6 rounded-md shadow-sm">
+            <p className="mb-3 text-sm font-medium">CATEGORIES</p>
+            <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
+              {categories.map((cat) => (
+                <p key={cat._id} className="flex gap-2">
+                  <input
+                    className="w-3"
+                    type="checkbox"
+                    value={cat.name}
+                    onChange={toggleCategory}
+                    id={`category-${cat._id}`}
+                  />
+                  <label htmlFor={`category-${cat._id}`} className="cursor-pointer">
+                    {cat.name}
+                  </label>
+                </p>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* SUBCATEGORIES FILTER */}
-        <div
-          className={`border border-gray-300 pl-5 py-3 my-3 sm:my-5 ${showFilter ? "" : "hidden"} sm:block rounded-md shadow-sm`}
-        >
-          <p className="mb-3 text-sm font-medium">TYPE</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Topwear"}
-                onChange={toggleSubCategory}
-                id="topwear"
-              />{" "}
-              <label htmlFor="topwear" className="cursor-pointer">Topwear</label>
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Bottomwear"}
-                onChange={toggleSubCategory}
-                id="bottomwear"
-              />{" "}
-              <label htmlFor="bottomwear" className="cursor-pointer">Bottomwear</label>
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Winterwear"}
-                onChange={toggleSubCategory}
-                id="winterwear"
-              />{" "}
-              <label htmlFor="winterwear" className="cursor-pointer">Winterwear</label>
-            </p>
+          {/* SUBCATEGORIES FILTER */}
+          <div className="border border-gray-300 pl-5 py-3 my-3 sm:my-5 rounded-md shadow-sm">
+            <p className="mb-3 text-sm font-medium">TYPE</p>
+            <div className="flex flex-col gap-2 text-sm font-light text-gray-700 max-h-48 overflow-y-auto">
+              {categories.map((cat) => 
+                cat.subCategories?.map((sub) => (
+                  <p key={`${cat._id}-${sub._id}`} className="flex gap-2">
+                    <input
+                      className="w-3"
+                      type="checkbox"
+                      value={sub.name}
+                      onChange={toggleSubCategory}
+                      id={`subcategory-${sub._id}`}
+                    />
+                    <label htmlFor={`subcategory-${sub._id}`} className="cursor-pointer">
+                      {sub.name}
+                    </label>
+                  </p>
+                ))
+              )}
+            </div>
           </div>
         </div>
         

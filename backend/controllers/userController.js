@@ -57,6 +57,14 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.json({
+        success: false,
+        message: "Your account has been deactivated. Please contact support.",
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {

@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { assets } from "../assets/assets";
 import axios from "axios";
 import { backendUrl } from "../App";
 import { toast } from "react-toastify";
 import { Upload, Tag, DollarSign, Check } from 'lucide-react';
+import { ShopContext } from "../context/ShopContext";
 
 const Add = ({ token }) => {
+  const { categories, sizes: dbSizes } = useContext(ShopContext);
+  
   const [image1, setImage1] = useState(false);
   const [image2, setImage2] = useState(false);
   const [image3, setImage3] = useState(false);
@@ -14,10 +17,24 @@ const Add = ({ token }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("Men");
-  const [subCategory, setSubCategory] = useState("Topwear");
+  const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
   const [bestseller, setBestseller] = useState(false);
   const [sizes, setSizes] = useState([]);
+  const [sizeCategory, setSizeCategory] = useState("clothing");
+
+  // Set default category and subcategory when categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !category) {
+      setCategory(categories[0].name);
+      if (categories[0].subCategories?.length > 0) {
+        setSubCategory(categories[0].subCategories[0].name);
+      }
+    }
+  }, [categories, category]);
+
+  // Filter sizes based on selected size category
+  const filteredSizes = dbSizes.filter(size => size.category === sizeCategory);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -168,12 +185,22 @@ const Add = ({ token }) => {
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    // Reset subcategory when category changes
+                    const selectedCategory = categories.find(cat => cat.name === e.target.value);
+                    if (selectedCategory?.subCategories?.length > 0) {
+                      setSubCategory(selectedCategory.subCategories[0].name);
+                    } else {
+                      setSubCategory("");
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="kids">Kids</option>
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat.name}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -186,9 +213,12 @@ const Add = ({ token }) => {
                   onChange={(e) => setSubCategory(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  <option value="Topwear">Topwear</option>
-                  <option value="Bottomwear">Bottomwear</option>
-                  <option value="Winterwear">Winterwear</option>
+                  <option value="">Select Sub Category</option>
+                  {categories
+                    .find(cat => cat.name === category)
+                    ?.subCategories?.map((sub) => (
+                      <option key={sub._id} value={sub.name}>{sub.name}</option>
+                    ))}
                 </select>
               </div>
 
@@ -221,16 +251,51 @@ const Add = ({ token }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Sizes
+                Size Category
               </label>
-              <div className="flex flex-wrap gap-2">
-                {["S", "M", "L", "XL", "XXL"].map((size) => (
-                  <SizeButton key={size} size={size} />
-                ))}
-              </div>
+              <select
+                value={sizeCategory}
+                onChange={(e) => {
+                  setSizeCategory(e.target.value);
+                  setSizes([]); // Clear selected sizes when category changes
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="clothing">Clothing</option>
+                <option value="shoes">Shoes</option>
+                <option value="accessories">Accessories</option>
+                <option value="general">General</option>
+              </select>
             </div>
 
-            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Available Sizes ({sizeCategory})
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {filteredSizes.map((sizeObj) => (
+                  <SizeButton key={sizeObj._id} size={sizeObj.name} />
+                ))}
+              </div>
+              {filteredSizes.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  No sizes available for {sizeCategory} category. Please add sizes in the Size Management page.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="bestseller"
+                type="checkbox"
+                checked={bestseller}
+                onChange={(e) => setBestseller(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="bestseller" className="ml-2 block text-sm text-gray-900">
+                Mark as bestseller
+              </label>
+            </div>
           </div>
         </div>
 

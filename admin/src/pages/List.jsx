@@ -1,18 +1,24 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { backendUrl, currency } from "../App";
 import { toast } from "react-toastify";
-import { Package, Trash2, Search, Filter, ChevronDown, Edit, X, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Filter, X, Edit, Trash2, Package, Tag, DollarSign, Star } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import { ShopContext } from '../context/ShopContext';
 
 const List = ({ token }) => {
+  const { categories, sizes } = useContext(ShopContext);
   const [list, setList] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    category: '',
+    subCategory: '',
+    bestSeller: ''
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -22,6 +28,11 @@ const List = ({ token }) => {
     sizes: [],
     bestSeller: false
   });
+  const [editSizeCategory, setEditSizeCategory] = useState("clothing");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchList = async () => {
     try {
@@ -130,10 +141,44 @@ const List = ({ token }) => {
     }
   };
 
-  const filteredList = list.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      category: '',
+      subCategory: '',
+      bestSeller: ''
+    });
+    setCurrentPage(1);
+  };
+
+  const filteredList = list.filter(item => {
+    // Add null checks to prevent errors
+    if (!item) return false;
+    
+    // Search term filter
+    const matchesSearch = (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (item.category || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Category filter
+    const matchesCategory = !filters.category || item.category === filters.category;
+    
+    // Subcategory filter
+    const matchesSubCategory = !filters.subCategory || item.subCategory === filters.subCategory;
+    
+    // Bestseller filter
+    const matchesBestSeller = filters.bestSeller === '' || 
+                             (filters.bestSeller === 'true' && item.bestSeller) ||
+                             (filters.bestSeller === 'false' && !item.bestSeller);
+    
+    return matchesSearch && matchesCategory && matchesSubCategory && matchesBestSeller;
+  });
 
   // Pagination calculations
   const totalItems = filteredList.length;
@@ -150,20 +195,15 @@ const List = ({ token }) => {
     fetchList();
   }, []);
 
-  // Subcategory options based on selected category
-  const getSubcategoryOptions = () => {
-    switch(formData.category) {
-      case 'Men':
-        return ['Topwear', 'Bottomwear', 'Winterwear', 'Shirts', 'Pants', 'Jackets', 'Accessories'];
-      case 'Women':
-        return ['Topwear', 'Bottomwear', 'Winterwear', 'Dresses', 'Tops', 'Skirts', 'Accessories'];
-      case 'Kids':
-        return ['Topwear', 'Bottomwear', 'Winterwear', 'Boys', 'Girls', 'Infants', 'Accessories'];
-      default:
-        // If no category is selected, return all possible subcategories to ensure the existing value is shown
-        return formData.subCategory ? [formData.subCategory] : [];
-    }
+  // Get subcategories for filter dropdown
+  const getFilterSubcategories = () => {
+    if (!filters.category) return [];
+    const selectedCategory = categories.find(cat => cat.name === filters.category);
+    return selectedCategory?.subCategories || [];
   };
+
+  // Filter sizes based on selected edit size category
+  const filteredEditSizes = sizes.filter(size => size.category === editSizeCategory);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -190,12 +230,81 @@ const List = ({ token }) => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
           <Filter className="h-5 w-5 mr-2 text-gray-400" />
           Filter
-          <ChevronDown className="ml-2 h-5 w-5 text-gray-400" />
+          <ChevronDown className={`ml-2 h-5 w-5 text-gray-400 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
         </button>
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                value={filters.category}
+                onChange={(e) => {
+                  setFilters({
+                    ...filters,
+                    category: e.target.value,
+                    subCategory: '' // Reset subcategory when category changes
+                  });
+                  setCurrentPage(1); // Reset to first page when filter changes
+                }}
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sub Category</label>
+              <select
+                value={filters.subCategory}
+                onChange={(e) => handleFilterChange('subCategory', e.target.value)}
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              >
+                <option value="">All Sub Categories</option>
+                {getFilterSubcategories().map((sub) => (
+                  <option key={sub._id} value={sub.name}>{sub.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Best Seller</label>
+              <select
+                value={filters.bestSeller}
+                onChange={(e) => handleFilterChange('bestSeller', e.target.value)}
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              >
+                <option value="">All Products</option>
+                <option value="true">Best Sellers Only</option>
+                <option value="false">Non-Best Sellers</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={clearFilters}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+          {(filters.category || filters.subCategory || filters.bestSeller) && (
+            <div className="mt-3 text-sm text-gray-600">
+              Showing {filteredList.length} of {list.length} products
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Product List */}
       <div className="mt-8 flex flex-col">
@@ -344,13 +453,20 @@ const List = ({ token }) => {
                     name="category"
                     id="category"
                     value={formData.category}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const { name, value } = e.target;
+                      setFormData({
+                        ...formData,
+                        [name]: value,
+                        subCategory: '' // Reset subcategory when category changes
+                      });
+                    }}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   >
                     <option value="">Select Category</option>
-                    <option value="Men">Men</option>
-                    <option value="Women">Women</option>
-                    <option value="Kids">Kids</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat.name}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -363,9 +479,11 @@ const List = ({ token }) => {
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   >
                     <option value="">Select Sub Category</option>
-                    {getSubcategoryOptions().map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
+                    {categories
+                      .find(cat => cat.name === formData.category)
+                      ?.subCategories?.map((sub) => (
+                        <option key={sub._id} value={sub.name}>{sub.name}</option>
+                      ))}
                   </select>
                 </div>
                 <div className="md:col-span-2">
@@ -380,23 +498,46 @@ const List = ({ token }) => {
                   ></textarea>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Sizes</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Size Category</label>
+                  <select
+                    value={editSizeCategory}
+                    onChange={(e) => {
+                      setEditSizeCategory(e.target.value);
+                      setFormData({
+                        ...formData,
+                        sizes: [] // Clear selected sizes when category changes
+                      });
+                    }}
+                    className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="clothing">Clothing</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="general">General</option>
+                  </select>
+                  
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes ({editSizeCategory})</label>
                   <div className="flex flex-wrap gap-2">
-                    {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                    {filteredEditSizes.map((sizeObj) => (
                       <button
-                        key={size}
+                        key={sizeObj._id}
                         type="button"
-                        onClick={() => handleSizeChange(size)}
+                        onClick={() => handleSizeChange(sizeObj.name)}
                         className={`px-4 py-2 border ${
-                          formData.sizes.includes(size)
+                          formData.sizes.includes(sizeObj.name)
                             ? 'bg-indigo-100 border-indigo-500 text-indigo-800'
                             : 'bg-white border-gray-300 text-gray-700'
                         } rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
                       >
-                        {size}
+                        {sizeObj.name}
                       </button>
                     ))}
                   </div>
+                  {filteredEditSizes.length === 0 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      No sizes available for {editSizeCategory} category. Please add sizes in the Size Management page.
+                    </p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <div className="flex items-center">

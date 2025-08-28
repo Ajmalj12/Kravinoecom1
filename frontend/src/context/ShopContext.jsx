@@ -19,6 +19,8 @@ const ShopContextProvider = (props) => {
   const [token, setToken] = useState("");
   const [pageContent, setPageContent] = useState({}); // { page: { key: value } }
   const [discounts, setDiscounts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [sizes, setSizes] = useState([]);
 
   const navigate = useNavigate();
 
@@ -140,18 +142,42 @@ const ShopContextProvider = (props) => {
 
   const getDiscountsData = async () => {
     try {
-      const response = await axios.get(backendUrl + '/api/discount/active');
-      if (response.data.success) {
-        setDiscounts(response.data.discounts);
+      const res = await axios.get(backendUrl + "/api/discount/list");
+      if (res.data.success) {
+        setDiscounts(res.data.discounts);
       }
     } catch (error) {
-      console.error('Failed to fetch discounts:', error);
+      console.log(error);
+      toast.error(error.message);
+    }
+  };
+
+  const getCategoriesData = async () => {
+    try {
+      const res = await axios.get(backendUrl + "/api/category/list");
+      if (res.data.success) {
+        setCategories(res.data.categories);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  };
+
+  const getSizesData = async () => {
+    try {
+      const res = await axios.get(backendUrl + "/api/size/list");
+      if (res.data.success) {
+        setSizes(res.data.sizes);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
     }
   };
 
   const getDiscountForProduct = (productId, productPrice) => {
     const applicableDiscount = discounts.find(d => 
-      d.applicableProducts.length === 0 || 
       d.applicableProducts.some(p => p._id === productId)
     );
     
@@ -206,6 +232,8 @@ const ShopContextProvider = (props) => {
   useEffect(() => {
     getProductsData();
     getDiscountsData();
+    getCategoriesData();
+    getSizesData();
     fetchPageContent('about');
     fetchPageContent('contact');
     fetchPageContent('global');
@@ -241,6 +269,8 @@ const ShopContextProvider = (props) => {
     fetchPageContent,
     discounts,
     getDiscountForProduct,
+    categories,
+    sizes,
   };
 
   return (

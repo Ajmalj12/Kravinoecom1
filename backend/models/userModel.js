@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema(
       type: Object,
       default: {},
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { minimize: false }
 );

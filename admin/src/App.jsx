@@ -14,6 +14,9 @@ import Banners from "./pages/Banners";
 import Content from "./pages/Content";
 import Discounts from "./pages/Discounts";
 import ProductOffers from "./pages/ProductOffers";
+import Categories from "./pages/Categories";
+import Sizes from "./pages/Sizes";
+import ShopContextProvider from "./context/ShopContext";
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = "$";
@@ -28,33 +31,37 @@ const App = () => {
   }, [token]);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <ToastContainer />
-      {token === "" ? (
-        <Login setToken={setToken} />
-      ) : (
-        <>
-          <Navbar setToken={setToken} />
-          <hr />
-          <div className="flex w-full">
-            <SideBar />
-            <div className="flex-1 ml-20 md:ml-64 p-8 text-gray-600 text-base">
-              <Routes>
-                <Route path="/" element={<Dashboard token={token} />} />
-                <Route path="/add" element={<Add token={token} />} />
-                <Route path="/list" element={<List token={token} />} />
-                <Route path="/order" element={<Order token={token} />} />
-                <Route path="/users" element={<Users token={token} />} />
-                <Route path="/banners" element={<Banners token={token} />} />
-                <Route path="/content" element={<Content token={token} />} />
-                <Route path="/discounts" element={<Discounts token={token} />} />
-                <Route path="/product-offers" element={<ProductOffers token={token} />} />
-              </Routes>
+    <ShopContextProvider>
+      <div className="bg-gray-50 min-h-screen">
+        <ToastContainer />
+        {token === "" ? (
+          <Login setToken={setToken} />
+        ) : (
+          <>
+            <Navbar setToken={setToken} />
+            <hr />
+            <div className="flex w-full">
+              <SideBar />
+              <div className="flex-1 ml-20 md:ml-64 p-8 text-gray-600 text-base">
+                <Routes>
+                  <Route path="/" element={<Dashboard token={token} />} />
+                  <Route path="/add" element={<Add token={token} />} />
+                  <Route path="/list" element={<List token={token} />} />
+                  <Route path="/order" element={<Order token={token} />} />
+                  <Route path="/users" element={<Users token={token} />} />
+                  <Route path="/banners" element={<Banners token={token} />} />
+                  <Route path="/content" element={<Content token={token} />} />
+                  <Route path="/discounts" element={<Discounts token={token} />} />
+                  <Route path="/product-offers" element={<ProductOffers token={token} />} />
+                  <Route path="/categories" element={<Categories token={token} />} />
+                  <Route path="/sizes" element={<Sizes token={token} />} />
+                </Routes>
+              </div>
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </ShopContextProvider>
   );
 };
 

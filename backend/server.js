@@ -11,6 +11,8 @@ import bannerRouter from "./routes/bannerRoute.js";
 import sectionRouter from "./routes/sectionRoute.js";
 import pageContentRouter from "./routes/pageContentRoute.js";
 import discountRouter from "./routes/discountRoute.js";
+import categoryRouter from "./routes/categoryRoute.js";
+import sizeRouter from "./routes/sizeRoute.js";
 
 //App Config
 const app = express();
@@ -30,6 +32,8 @@ app.use("/api/banner", bannerRouter);
 app.use("/api/section", sectionRouter);
 app.use("/api/page", pageContentRouter);
 app.use("/api/discount", discountRouter);
+app.use("/api/category", categoryRouter);
+app.use("/api/size", sizeRouter);
 
 app.get("/", (req, res) => {
   res.send("IT'S WORKING WOWWWW");

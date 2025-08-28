@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { PlusCircle, Package, ShoppingBag, LayoutDashboard, Users, Image, Percent, Tags } from 'lucide-react';
+import { PlusCircle, Package, ShoppingBag, LayoutDashboard, Users, Image, Percent, Tags, FolderOpen, Ruler } from 'lucide-react';
 
 const SideBar = () => {
   const navItems = [
@@ -10,6 +10,8 @@ const SideBar = () => {
     { to: "/users", icon: <Users size={20} />, label: "Users" },
     { to: "/banners", icon: <Image size={20} />, label: "Banners" },
     { to: "/content", icon: <LayoutDashboard size={20} />, label: "Content" },
+    { to: "/categories", icon: <FolderOpen size={20} />, label: "Categories" },
+    { to: "/sizes", icon: <Ruler size={20} />, label: "Sizes" },
     { to: "/discounts", icon: <Percent size={20} />, label: "Discounts" },
     { to: "/product-offers", icon: <Tags size={20} />, label: "Product Offers" },
   ];

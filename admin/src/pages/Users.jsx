@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { backendUrl } from '../App';
-import { Search, UserPlus, Trash2, Edit, Mail, X } from 'lucide-react';
+import { Search, UserPlus, Edit, Mail, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import { toast } from 'react-toastify';
 
 const Users = ({ token }) => {
   const [users, setUsers] = useState([]);
@@ -13,7 +14,8 @@ const Users = ({ token }) => {
     name: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    isActive: true
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,21 +43,6 @@ const Users = ({ token }) => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        const response = await axios.delete(`${backendUrl}/api/user/${userId}`, {
-          headers: { token }
-        });
-
-        if (response.data.success) {
-          setUsers(users.filter(user => user._id !== userId));
-        }
-      } catch (error) {
-        console.error("Error deleting user:", error);
-      }
-    }
-  };
   
   const handleEditUser = (user) => {
     setEditingUser(user);
@@ -63,16 +50,37 @@ const Users = ({ token }) => {
       name: user.name || '',
       email: user.email || '',
       phone: user.phone || '',
-      address: user.address || ''
+      address: user.address || '',
+      isActive: user.isActive !== undefined ? user.isActive : true
     });
     setIsModalOpen(true);
   };
+
+  const handleToggleUserStatus = async (userId, currentStatus) => {
+    try {
+      const response = await axios.put(
+        `${backendUrl}/api/user/${userId}`,
+        { isActive: !currentStatus },
+        { headers: { token } }
+      );
+      
+      if (response.data.success) {
+        setUsers(users.map(user => 
+          user._id === userId ? { ...user, isActive: !currentStatus } : user
+        ));
+        toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      }
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      toast.error("Failed to update user status");
+    }
+  };
   
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
   
@@ -86,15 +94,15 @@ const Users = ({ token }) => {
       );
       
       if (response.data.success) {
-        // Update the user in the local state
         setUsers(users.map(user => 
           user._id === editingUser._id ? { ...user, ...formData } : user
         ));
         setIsModalOpen(false);
+        toast.success("User status updated successfully");
       }
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update user. Please try again.");
+      toast.error("Failed to update user status");
     }
   };
 
@@ -192,9 +200,26 @@ const Users = ({ token }) => {
                       <div className="text-sm text-gray-900">{user.orderCount || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
-                      </span>
+                      <button
+                        onClick={() => handleToggleUserStatus(user._id, user.isActive)}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          user.isActive !== false
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
+                        {user.isActive !== false ? (
+                          <>
+                            <ToggleRight className="w-3 h-3 mr-1" />
+                            Active
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="w-3 h-3 mr-1" />
+                            Inactive
+                          </>
+                        )}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
@@ -205,13 +230,6 @@ const Users = ({ token }) => {
                           onClick={() => handleEditUser(user)}
                         >
                           <Edit className="w-5 h-5" />
-                        </button>
-                        <button 
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete User"
-                          onClick={() => handleDeleteUser(user._id)}
-                        >
-                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -238,7 +256,7 @@ const Users = ({ token }) => {
         </div>
       )}
 
-      {/* Edit User Modal */}
+      {/* Edit User Status Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
@@ -262,6 +280,7 @@ const Users = ({ token }) => {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    required
                   />
                 </div>
                 <div>
@@ -273,6 +292,7 @@ const Users = ({ token }) => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    required
                   />
                 </div>
                 <div>
@@ -296,6 +316,40 @@ const Users = ({ token }) => {
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   ></textarea>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Account Status</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="isActive"
+                        value="true"
+                        checked={formData.isActive === true}
+                        onChange={() => setFormData({...formData, isActive: true})}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 flex items-center">
+                        <ToggleRight className="w-4 h-4 mr-1 text-green-600" />
+                        Active (User can login and use the website)
+                      </span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="isActive"
+                        value="false"
+                        checked={formData.isActive === false}
+                        onChange={() => setFormData({...formData, isActive: false})}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 flex items-center">
+                        <ToggleLeft className="w-4 h-4 mr-1 text-red-600" />
+                        Inactive (User cannot login or access the website)
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="mt-6 flex justify-end space-x-3">
