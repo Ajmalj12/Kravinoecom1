@@ -10,6 +10,9 @@ const Content = ({ token }) => {
   const [newValue, setNewValue] = useState('');
   const [uploadKey, setUploadKey] = useState('');
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState('');
+  const [pendingChanges, setPendingChanges] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const fetch = async () => {
     try {
@@ -23,28 +26,59 @@ const Content = ({ token }) => {
   const saveItem = async (key, value) => {
     try {
       const res = await axios.post(backendUrl + '/api/page/upsert', { page, key, value }, { headers: { token } });
-      if (res.data.success) { fetch(); }
+      if (res.data.success) { 
+        fetch(); 
+        // Remove from pending changes
+        setPendingChanges(prev => {
+          const updated = { ...prev };
+          delete updated[key];
+          return updated;
+        });
+      }
       else toast.error(res.data.message || 'Failed to save');
     } catch (e) { toast.error(e.response?.data?.message || e.message); }
+  };
+
+  const handleInputChange = (key, value) => {
+    setPendingChanges(prev => ({ ...prev, [key]: value }));
+  };
+
+  const saveAllChanges = async () => {
+    if (Object.keys(pendingChanges).length === 0) {
+      toast.info('No changes to save');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      for (const [key, value] of Object.entries(pendingChanges)) {
+        await saveItem(key, value);
+      }
+      toast.success('All changes saved successfully');
+    } catch (e) {
+      toast.error('Error saving changes');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addItem = async (e) => {
     e.preventDefault();
     if (!newKey) { toast.error('Key required'); return; }
-    await saveItem(newKey, newValue);
+    handleInputChange(newKey, newValue);
     setNewKey(''); setNewValue('');
   };
 
-  const uploadImage = async (e) => {
+  const uploadImageWithKey = async (e, key) => {
     e.preventDefault();
-    if (!uploadKey || !file) { 
+    if (!key || !file) { 
       toast.error('Please select an image file first'); 
       return; 
     }
     try {
       const form = new FormData();
       form.append('page', page);
-      form.append('key', uploadKey);
+      form.append('key', key);
       form.append('image', file);
       const res = await axios.post(backendUrl + '/api/page/upload', form, { 
         headers: { 
@@ -54,9 +88,12 @@ const Content = ({ token }) => {
       });
       if (res.data.success) { 
         toast.success('Image uploaded successfully');
-        setUploadKey(''); 
+        // Update the input field immediately with the uploaded URL
+        const uploadedUrl = res.data.item.value;
+        setPendingChanges(prev => ({ ...prev, [key]: uploadedUrl }));
+        
         setFile(null); 
-        fetch(); 
+        setFileName('');
         // Clear file input
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = '');
@@ -68,7 +105,7 @@ const Content = ({ token }) => {
     }
   };
 
-  const getValue = (key) => items.find(i => i.key === key)?.value || '';
+  const getValue = (key) => pendingChanges[key] || items.find(i => i.key === key)?.value || '';
 
   const FooterEditor = () => (
     <div className="bg-white p-4 rounded border mb-6">
@@ -82,7 +119,7 @@ const Content = ({ token }) => {
       ].map(({ key, label }) => (
         <div key={key} className="grid md:grid-cols-3 gap-2 items-center mb-2">
           <div className="text-sm font-medium">{label}</div>
-          <input className="border px-2 py-1 text-sm md:col-span-2" defaultValue={getValue(key)} onBlur={(e)=>saveItem(key, e.target.value)} />
+          <input className="border px-2 py-1 text-sm md:col-span-2" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
         </div>
       ))}
     </div>
@@ -101,17 +138,23 @@ const Content = ({ token }) => {
       ].map(({ key, label }) => (
         <div key={key} className="grid md:grid-cols-3 gap-2 items-center mb-2">
           <div className="text-sm font-medium">{label}</div>
-          <input className="border px-2 py-1 text-sm md:col-span-2" defaultValue={items.find(i=>i.key===key)?.value || ''} onBlur={(e)=>saveItem(key, e.target.value)} />
+          <input className="border px-2 py-1 text-sm md:col-span-2" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
         </div>
       ))}
       <div className="grid md:grid-cols-3 gap-2 items-center">
         <div className="text-sm font-medium">Hero Image</div>
         <div className="md:col-span-2 flex items-center gap-2">
-          <input className="border px-2 py-1 text-sm flex-1" defaultValue={items.find(i=>i.key==='heroImage')?.value || ''} onBlur={(e)=>saveItem('heroImage', e.target.value)} />
+          <input className="border px-2 py-1 text-sm flex-1" value={getValue('heroImage')} onChange={(e)=>handleInputChange('heroImage', e.target.value)} />
         </div>
         <div className="md:col-start-2 md:col-span-2 flex items-center gap-2 mt-2">
-          <input type="file" accept="image/*" onChange={(e)=>setFile(e.target.files[0])} />
-          <button onClick={async (e)=>{ e.preventDefault(); setUploadKey('heroImage'); await uploadImage(e); }} className="bg-black text-white px-4 py-1 rounded">Upload</button>
+          <div className="relative flex-1">
+            <input type="file" accept="image/*" onChange={(e)=>{setFile(e.target.files[0]); setFileName(e.target.files[0]?.name || '');}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div className="border px-2 py-1 text-sm bg-white cursor-pointer flex items-center justify-between">
+              <span className="text-gray-600">{fileName || 'Choose file'}</span>
+              <span className="text-xs text-gray-400">Browse</span>
+            </div>
+          </div>
+          <button onClick={async (e)=>{ e.preventDefault(); await uploadImageWithKey(e, 'heroImage'); }} className="bg-black text-white px-4 py-1 rounded">Upload</button>
         </div>
       </div>
     </div>
@@ -139,20 +182,26 @@ const Content = ({ token }) => {
         <div key={key} className="grid md:grid-cols-3 gap-2 items-center mb-2">
           <div className="text-sm font-medium">{label}</div>
           {key.includes('Body') || key.includes('Description') ? (
-            <textarea className="border px-2 py-1 text-sm md:col-span-2 h-20 resize-none" defaultValue={items.find(i=>i.key===key)?.value || ''} onBlur={(e)=>saveItem(key, e.target.value)} />
+            <textarea className="border px-2 py-1 text-sm md:col-span-2 h-20 resize-none" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
           ) : (
-            <input className="border px-2 py-1 text-sm md:col-span-2" defaultValue={items.find(i=>i.key===key)?.value || ''} onBlur={(e)=>saveItem(key, e.target.value)} />
+            <input className="border px-2 py-1 text-sm md:col-span-2" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
           )}
         </div>
       ))}
       <div className="grid md:grid-cols-3 gap-2 items-center">
         <div className="text-sm font-medium">About Hero Image</div>
         <div className="md:col-span-2 flex items-center gap-2">
-          <input className="border px-2 py-1 text-sm flex-1" defaultValue={items.find(i=>i.key==='heroImage')?.value || ''} onBlur={(e)=>saveItem('heroImage', e.target.value)} />
+          <input className="border px-2 py-1 text-sm flex-1" value={getValue('heroImage')} onChange={(e)=>handleInputChange('heroImage', e.target.value)} />
         </div>
         <div className="md:col-start-2 md:col-span-2 flex items-center gap-2 mt-2">
-          <input type="file" accept="image/*" onChange={(e)=>setFile(e.target.files[0])} id="aboutImageUpload" />
-          <button onClick={async (e)=>{ e.preventDefault(); setUploadKey('heroImage'); await uploadImage(e); }} className="bg-black text-white px-4 py-1 rounded">Upload About Image</button>
+          <div className="relative flex-1">
+            <input type="file" accept="image/*" onChange={(e)=>{setFile(e.target.files[0]); setFileName(e.target.files[0]?.name || '');}} id="aboutImageUpload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div className="border px-2 py-1 text-sm bg-white cursor-pointer flex items-center justify-between">
+              <span className="text-gray-600">{fileName || 'Choose file'}</span>
+              <span className="text-xs text-gray-400">Browse</span>
+            </div>
+          </div>
+          <button onClick={async (e)=>{ e.preventDefault(); await uploadImageWithKey(e, 'heroImage'); }} className="bg-black text-white px-4 py-1 rounded">Upload About Image</button>
         </div>
       </div>
     </div>
@@ -176,20 +225,26 @@ const Content = ({ token }) => {
         <div key={key} className="grid md:grid-cols-3 gap-2 items-center mb-2">
           <div className="text-sm font-medium">{label}</div>
           {key.includes('Body') || key.includes('subtitle') || key.includes('address') ? (
-            <textarea className="border px-2 py-1 text-sm md:col-span-2 h-20 resize-none" defaultValue={items.find(i=>i.key===key)?.value || ''} onBlur={(e)=>saveItem(key, e.target.value)} />
+            <textarea className="border px-2 py-1 text-sm md:col-span-2 h-20 resize-none" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
           ) : (
-            <input className="border px-2 py-1 text-sm md:col-span-2" defaultValue={items.find(i=>i.key===key)?.value || ''} onBlur={(e)=>saveItem(key, e.target.value)} />
+            <input className="border px-2 py-1 text-sm md:col-span-2" value={getValue(key)} onChange={(e)=>handleInputChange(key, e.target.value)} />
           )}
         </div>
       ))}
       <div className="grid md:grid-cols-3 gap-2 items-center">
         <div className="text-sm font-medium">Contact Hero Image</div>
         <div className="md:col-span-2 flex items-center gap-2">
-          <input className="border px-2 py-1 text-sm flex-1" defaultValue={items.find(i=>i.key==='heroImage')?.value || ''} onBlur={(e)=>saveItem('heroImage', e.target.value)} />
+          <input className="border px-2 py-1 text-sm flex-1" value={getValue('heroImage')} onChange={(e)=>handleInputChange('heroImage', e.target.value)} />
         </div>
         <div className="md:col-start-2 md:col-span-2 flex items-center gap-2 mt-2">
-          <input type="file" accept="image/*" onChange={(e)=>setFile(e.target.files[0])} id="contactImageUpload" />
-          <button onClick={async (e)=>{ e.preventDefault(); setUploadKey('heroImage'); await uploadImage(e); }} className="bg-black text-white px-4 py-1 rounded">Upload Contact Image</button>
+          <div className="relative flex-1">
+            <input type="file" accept="image/*" onChange={(e)=>{setFile(e.target.files[0]); setFileName(e.target.files[0]?.name || '');}} id="contactImageUpload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div className="border px-2 py-1 text-sm bg-white cursor-pointer flex items-center justify-between">
+              <span className="text-gray-600">{fileName || 'Choose file'}</span>
+              <span className="text-xs text-gray-400">Browse</span>
+            </div>
+          </div>
+          <button onClick={async (e)=>{ e.preventDefault(); await uploadImageWithKey(e, 'heroImage'); }} className="bg-black text-white px-4 py-1 rounded">Upload Contact Image</button>
         </div>
       </div>
     </div>
@@ -212,6 +267,22 @@ const Content = ({ token }) => {
       {page === 'home' && <HeroEditor />}
       {page === 'about' && <AboutEditor />}
       {page === 'contact' && <ContactEditor />}
+
+      {/* Save Button */}
+      {Object.keys(pendingChanges).length > 0 && (
+        <div className="bg-white p-4 rounded border mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {Object.keys(pendingChanges).length} unsaved change{Object.keys(pendingChanges).length > 1 ? 's' : ''}
+          </div>
+          <button 
+            onClick={saveAllChanges} 
+            disabled={saving}
+            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded font-medium"
+          >
+            {saving ? 'Saving...' : 'Save All Changes'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
