@@ -2,6 +2,14 @@ import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not set. Please configure it in your environment.");
+  }
+  return secret;
+};
+
 // function for register user
 export const registerUser = async (req, res) => {
   try {
@@ -26,7 +34,7 @@ export const registerUser = async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign({ userId: user._id }, getJwtSecret());
 
     res.json({ success: true, token });
   } catch (e) {
@@ -58,7 +66,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign({ userId: user._id }, getJwtSecret());
 
     res.json({ success: true, token });
   } catch (e) {
@@ -127,7 +135,7 @@ export const updateUserProfile = async (req, res) => {
         phone: updatedUser.phone || "",
         address: updatedUser.address || "",
       },
-      token: jwt.sign({ userId: updatedUser._id }, process.env.JWT_SECRET),
+      token: jwt.sign({ userId: updatedUser._id }, getJwtSecret()),
     });
   } catch (e) {
     console.log(e);
@@ -144,7 +152,7 @@ export const adminLogin = async (req, res) => {
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      const token = jwt.sign(email + password, process.env.JWT_SECRET);
+      const token = jwt.sign(email + password, getJwtSecret());
       res.json({ success: true, token });
     } else {
       res.json({
