@@ -17,6 +17,8 @@ const Product = () => {
   const [ratingCount, setRatingCount] = useState(0);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [discount, setDiscount] = useState(null);
+  const [discountedPrice, setDiscountedPrice] = useState(null);
 
   const renderStars = (value) => {
     const full = Math.round(value); // simple rounding to nearest whole star
@@ -45,6 +47,34 @@ const Product = () => {
     });
   };
 
+  const fetchDiscount = async () => {
+    try {
+      const response = await axios.get(backendUrl + '/api/discount/active');
+      if (response.data.success) {
+        const applicableDiscount = response.data.discounts.find(d => 
+          d.applicableProducts.length === 0 || 
+          d.applicableProducts.some(p => p._id === productId)
+        );
+        
+        if (applicableDiscount && productData) {
+          setDiscount(applicableDiscount);
+          let discountAmount = 0;
+          if (applicableDiscount.type === 'percentage') {
+            discountAmount = (productData.price * applicableDiscount.value) / 100;
+            if (applicableDiscount.maxDiscountAmount && discountAmount > applicableDiscount.maxDiscountAmount) {
+              discountAmount = applicableDiscount.maxDiscountAmount;
+            }
+          } else {
+            discountAmount = applicableDiscount.value;
+          }
+          setDiscountedPrice(Math.max(0, productData.price - discountAmount));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch discounts:', error);
+    }
+  };
+
   const fetchReviews = async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/product/${productId}/reviews`);
@@ -62,6 +92,12 @@ const Product = () => {
     fetchProductData();
     fetchReviews();
   }, [productId]);
+
+  useEffect(() => {
+    if (productData) {
+      fetchDiscount();
+    }
+  }, [productData, productId, backendUrl]);
 
   // Scroll to top whenever product changes
   useEffect(() => {
@@ -131,10 +167,27 @@ const Product = () => {
             {renderStars(ratingAverage)}
             <span className="text-sm text-gray-600">{ratingAverage.toFixed(1)} ({ratingCount})</span>
           </div>
-          <p className="mt-4 md:mt-5 text-2xl md:text-3xl font-medium">
-            {currency}
-            {productData.price}
-          </p>
+          <div className="mt-4 md:mt-5 flex items-center gap-4">
+            {discount ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl md:text-3xl font-medium text-red-600">
+                    {currency}{discountedPrice?.toFixed(2)}
+                  </p>
+                  <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                    {discount.type === 'percentage' ? `${discount.value}% OFF` : `${currency}${discount.value} OFF`}
+                  </div>
+                </div>
+                <p className="text-lg text-gray-500 line-through">
+                  {currency}{productData.price}
+                </p>
+              </>
+            ) : (
+              <p className="text-2xl md:text-3xl font-medium">
+                {currency}{productData.price}
+              </p>
+            )}
+          </div>
           <p className="mt-4 md:mt-5 text-gray-500 text-sm md:text-base w-full md:w-4/5">
             {productData.description}
           </p>
@@ -162,7 +215,9 @@ const Product = () => {
                 toast.error("Must select product size!");
                 return;
               }
-              addToCart(productData._id, size);
+              // Add to cart with discounted price if available
+              const priceToUse = discountedPrice || productData.price;
+              addToCart(productData._id, size, priceToUse);
               toast.success("Added to cart!");
             }}
           >

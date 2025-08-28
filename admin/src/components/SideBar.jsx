@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { PlusCircle, Package, ShoppingBag, LayoutDashboard, Users, Image } from 'lucide-react';
+import { PlusCircle, Package, ShoppingBag, LayoutDashboard, Users, Image, Percent, Tags } from 'lucide-react';
 
 const SideBar = () => {
   const navItems = [
@@ -10,11 +10,13 @@ const SideBar = () => {
     { to: "/users", icon: <Users size={20} />, label: "Users" },
     { to: "/banners", icon: <Image size={20} />, label: "Banners" },
     { to: "/content", icon: <LayoutDashboard size={20} />, label: "Content" },
+    { to: "/discounts", icon: <Percent size={20} />, label: "Discounts" },
+    { to: "/product-offers", icon: <Tags size={20} />, label: "Product Offers" },
   ];
 
   return (
-    <div className="w-20 md:w-64 min-h-screen bg-white border-r border-gray-200 shadow-sm">
-      <div className="flex flex-col h-full">
+    <div className="w-20 md:w-64 min-h-screen bg-white border-r border-gray-200 shadow-sm fixed left-0 top-0 z-10">
+      <div className="flex flex-col h-screen">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 hidden md:block">Dashboard</h2>
           <p className="text-sm text-gray-500 mt-1 hidden md:block">Store Management</p>

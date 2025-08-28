@@ -1,13 +1,18 @@
 import mongoose from "mongoose";
 
 const bannerSchema = new mongoose.Schema({
-  title: { type: String },
-  image: { type: String, required: true },
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "product", required: true },
-  active: { type: Boolean, default: true },
-  position: { type: String, enum: ["top", "home", "footer"], default: "home" },
+  title: { type: String, required: true },
+  description: { type: String },
+  images: [{ 
+    url: { type: String, required: true },
+    alt: { type: String },
+    order: { type: Number, default: 0 }
+  }],
+  active: { type: Boolean, default: false },
+  section: { type: String, enum: ["hero", "home", "footer"], default: "hero" },
+  order: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 
 const bannerModel = mongoose.models.banner || mongoose.model("banner", bannerSchema);
-export default bannerModel; 
+export default bannerModel;

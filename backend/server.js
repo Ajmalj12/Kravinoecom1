@@ -10,6 +10,7 @@ import orderRouter from "./routes/orderRoute.js";
 import bannerRouter from "./routes/bannerRoute.js";
 import sectionRouter from "./routes/sectionRoute.js";
 import pageContentRouter from "./routes/pageContentRoute.js";
+import discountRouter from "./routes/discountRoute.js";
 
 //App Config
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/banner", bannerRouter);
 app.use("/api/section", sectionRouter);
 app.use("/api/page", pageContentRouter);
+app.use("/api/discount", discountRouter);
 
 app.get("/", (req, res) => {
   res.send("IT'S WORKING WOWWWW");

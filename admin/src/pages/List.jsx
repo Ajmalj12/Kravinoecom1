@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { backendUrl, currency } from "../App";
 import { toast } from "react-toastify";
 import { Package, Trash2, Search, Filter, ChevronDown, Edit, X, Star } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 const List = ({ token }) => {
   const [list, setList] = useState([]);
@@ -10,6 +11,8 @@ const List = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -132,6 +135,17 @@ const List = ({ token }) => {
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination calculations
+  const totalItems = filteredList.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredList.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   useEffect(() => {
     fetchList();
   }, []);
@@ -226,7 +240,7 @@ const List = ({ token }) => {
                         </td>
                       </tr>
                     ) : (
-                      filteredList.map((item, i) => (
+                      currentItems.map((item, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="py-4 pl-4 pr-3 sm:pl-6">
                             <div className="flex items-center">
@@ -418,6 +432,17 @@ const List = ({ token }) => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

@@ -17,11 +17,12 @@ const Cart = () => {
       const tempData = [];
       for (const items in cartItems) {
         for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
+          if (cartItems[items][item] > 0 && item !== 'discountedPrice') {
             tempData.push({
               _id: items,
               size: item,
               quantity: cartItems[items][item],
+              discountedPrice: cartItems[items].discountedPrice || null,
             });
           }
         }
@@ -69,10 +70,22 @@ const Cart = () => {
                       {productsData.name}
                     </p>
                     <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-5 mt-2">
-                      <p className="font-medium">
-                        {currency}
-                        {productsData.price}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {item.discountedPrice ? (
+                          <>
+                            <p className="font-medium text-red-600">
+                              {currency}{item.discountedPrice.toFixed(2)}
+                            </p>
+                            <p className="text-sm text-gray-500 line-through">
+                              {currency}{productsData.price}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="font-medium">
+                            {currency}{productsData.price}
+                          </p>
+                        )}
+                      </div>
                       <p className="px-2 md:px-3 py-1 border bg-gray-50 inline-block w-fit">
                         {item.size}
                       </p>

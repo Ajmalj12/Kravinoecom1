@@ -12,6 +12,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Banners from "./pages/Banners";
 import Content from "./pages/Content";
+import Discounts from "./pages/Discounts";
+import ProductOffers from "./pages/ProductOffers";
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = "$";
@@ -36,7 +38,7 @@ const App = () => {
           <hr />
           <div className="flex w-full">
             <SideBar />
-            <div className="w-[70%] mx-auto ml-[max(5vw, 25px)], my-8 text-gray-600 text-base">
+            <div className="flex-1 ml-20 md:ml-64 p-8 text-gray-600 text-base">
               <Routes>
                 <Route path="/" element={<Dashboard token={token} />} />
                 <Route path="/add" element={<Add token={token} />} />
@@ -45,6 +47,8 @@ const App = () => {
                 <Route path="/users" element={<Users token={token} />} />
                 <Route path="/banners" element={<Banners token={token} />} />
                 <Route path="/content" element={<Content token={token} />} />
+                <Route path="/discounts" element={<Discounts token={token} />} />
+                <Route path="/product-offers" element={<ProductOffers token={token} />} />
               </Routes>
             </div>
           </div>

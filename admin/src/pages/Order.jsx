@@ -4,9 +4,12 @@ import { toast } from "react-toastify";
 import { backendUrl, currency } from "../App";
 import { assets } from "../assets/assets";
 import { Package, Truck, Box, MapPin, Phone, Calendar, CreditCard } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 const Order = ({ token }) => {
   const [orders, setOrders] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchAllOrders = async () => {
     if (!token) return null;
@@ -62,11 +65,18 @@ const Order = ({ token }) => {
     fetchAllOrders();
   }, [token]);
 
+  // Pagination
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Orders</h1>
       <div className="space-y-6">
-        {orders.map((order, i) => (
+        {paginatedOrders.map((order, i) => (
           <div
             key={i}
             className="bg-white rounded-lg shadow-md overflow-hidden"
@@ -178,6 +188,17 @@ const Order = ({ token }) => {
           </div>
         ))}
       </div>
+      
+      {/* Pagination */}
+      {orders.length > 0 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   );
 };

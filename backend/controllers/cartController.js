@@ -3,7 +3,7 @@ import userModel from "../models/userModel.js";
 //ADD PRODUCT TO USER CART
 export const addToCart = async (req, res) => {
   try {
-    const { userId, itemId, size } = req.body;
+    const { userId, itemId, size, discountedPrice } = req.body;
 
     const userData = await userModel.findById(userId);
     const cartData = await userData.cartData;
@@ -14,9 +14,17 @@ export const addToCart = async (req, res) => {
       } else {
         cartData[itemId][size] = 1;
       }
+      // Update discounted price if provided
+      if (discountedPrice !== undefined) {
+        cartData[itemId].discountedPrice = discountedPrice;
+      }
     } else {
       cartData[itemId] = {};
       cartData[itemId][size] = 1;
+      // Store discounted price if provided
+      if (discountedPrice !== undefined) {
+        cartData[itemId].discountedPrice = discountedPrice;
+      }
     }
 
     await userModel.findByIdAndUpdate(userId, { cartData });
