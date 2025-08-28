@@ -205,6 +205,13 @@ const Product = () => {
 
         <div>
           <h2 className="text-xl font-semibold mb-3">Write a Review</h2>
+          {!token && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+              <p className="text-yellow-800 text-sm">
+                <strong>Please login to write a review.</strong> You need to be logged in to share your experience with this product.
+              </p>
+            </div>
+          )}
           <form onSubmit={submitReview} className="space-y-3">
             <div>
               <label className="block text-sm font-medium mb-1">Rating</label>
@@ -212,6 +219,7 @@ const Product = () => {
                 value={newReview.rating}
                 onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
                 className="border px-3 py-2"
+                disabled={!token}
               >
                 {[5,4,3,2,1].map(v => (
                   <option key={v} value={v}>{v}</option>
@@ -225,11 +233,12 @@ const Product = () => {
                 onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                 className="w-full border px-3 py-2"
                 rows={3}
-                placeholder="Share your thoughts about this product"
+                placeholder={token ? "Share your thoughts about this product" : "Please login to write a review"}
+                disabled={!token}
               />
             </div>
-            <button disabled={submittingReview} className="bg-black text-white px-6 py-2 text-sm rounded disabled:opacity-60">
-              {submittingReview ? "Submitting..." : "Submit Review"}
+            <button disabled={submittingReview || !token} className="bg-black text-white px-6 py-2 text-sm rounded disabled:opacity-60">
+              {submittingReview ? "Submitting..." : !token ? "Login Required" : "Submit Review"}
             </button>
           </form>
         </div>

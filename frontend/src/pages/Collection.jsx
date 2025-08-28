@@ -5,7 +5,7 @@ import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 
 const Collection = () => {
-  const { products, search, showSearch } = useContext(ShopContext);
+  const { products, search, setSearch } = useContext(ShopContext);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
@@ -32,7 +32,7 @@ const Collection = () => {
   const applyFilter = () => {
     let productsCopy = products.slice();
 
-    if (showSearch && search) {
+    if (search) {
       productsCopy = productsCopy.filter((item) =>
         item.name.toLowerCase().includes(search.toLowerCase())
       );
@@ -69,7 +69,7 @@ const Collection = () => {
   // Apply initial filter
   useEffect(() => {
     applyFilter();
-  }, [category, subCategory, search, showSearch, products]);
+  }, [category, subCategory, search, products]);
   
   // Apply sorting whenever filter results or sort type changes
   useEffect(() => {
@@ -190,6 +190,20 @@ const Collection = () => {
 
       {/* RIGHT SIDE */}
       <div className="flex-1">
+        {/* SEARCH BAR */}
+        <div className="mb-6">
+          <div className="flex items-center justify-center border border-gray-400 px-4 py-3 rounded-full bg-gray-50">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="flex-1 outline-none bg-inherit text-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <img src={assets.search_icon} className="w-4 ml-2" alt="Search" />
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-base sm:text-2xl mb-4">
           <Title text1={"ALL"} text2={"COLLECTIONS"} />
 

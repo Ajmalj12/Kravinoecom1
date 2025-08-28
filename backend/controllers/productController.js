@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js";
+import userModel from "../models/userModel.js";
 
 // function for add product
 export const addProduct = async (req, res) => {
@@ -97,7 +98,6 @@ export const addReview = async (req, res) => {
   try {
     const { productId, rating, comment } = req.body;
     const userId = req.user._id;
-    const userName = req.body.userName || "Anonymous";
 
     if (!productId || !rating || !comment) {
       return res.json({ success: false, message: "Missing required fields" });
@@ -113,6 +113,10 @@ export const addReview = async (req, res) => {
     if (existing) {
       return res.json({ success: false, message: "You have already reviewed this product" });
     }
+
+    // Get user's name from the user model
+    const user = await userModel.findById(userId);
+    const userName = user ? user.name : "Anonymous";
 
     product.reviews.push({
       user: userId,

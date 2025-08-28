@@ -126,7 +126,6 @@ const Banners = ({ token }) => {
         <div>
           <label className="block text-sm mb-1">Position</label>
           <select className="border px-3 py-2" value={position} onChange={(e)=>setPosition(e.target.value)}>
-            <option value="top">Top banner (site-wide)</option>
             <option value="home">Home banner</option>
             <option value="footer">Footer banner</option>
           </select>

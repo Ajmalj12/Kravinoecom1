@@ -52,12 +52,6 @@ const Navbar = () => {
       </ul>
 
       <div className="flex items-center gap-3 md:gap-6">
-        <img
-          src={assets.search_icon}
-          className="w-4 md:w-5 cursor-pointer"
-          onClick={() => setShowSearch(true)}
-          alt="Search"
-        />
         <div className="group relative">
           <img
             src={assets.profile_icon}

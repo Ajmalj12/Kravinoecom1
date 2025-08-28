@@ -17,7 +17,7 @@ const authUser = async (req, res, next) => {
     next();
   } catch (e) {
     console.log(e);
-    res.json({ success: false, message: res.message });
+    res.json({ success: false, message: e.message });
   }
 };
 

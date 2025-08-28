@@ -162,6 +162,7 @@ const ShopContextProvider = (props) => {
     fetchPageContent('about');
     fetchPageContent('contact');
     fetchPageContent('global');
+    fetchPageContent('home');
   }, []);
 
   useEffect(() => {
