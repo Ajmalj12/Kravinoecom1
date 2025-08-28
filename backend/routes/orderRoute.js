@@ -15,6 +15,7 @@ const orderRouter = express.Router();
 
 //ADMIN FEATURE
 orderRouter.post("/list", adminAuth, allOrders);
+orderRouter.get("/all", adminAuth, allOrders);  // Added for dashboard compatibility
 orderRouter.post("/status", adminAuth, updateStatus);
 
 //PAYMENT FEATURE

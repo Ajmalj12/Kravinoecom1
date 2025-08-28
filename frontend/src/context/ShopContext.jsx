@@ -11,7 +11,10 @@ const ShopContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [cartItems, setCartItems] = useState({});
+  const [cartItems, setCartItems] = useState(() => {
+    const savedCart = localStorage.getItem('cartItems');
+    return savedCart ? JSON.parse(savedCart) : {};
+  });
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
 
@@ -38,6 +41,8 @@ const ShopContextProvider = (props) => {
     }
 
     setCartItems(cartData);
+    // Store cart in localStorage for persistence
+    localStorage.setItem('cartItems', JSON.stringify(cartData));
 
     if (token) {
       try {
@@ -74,6 +79,8 @@ const ShopContextProvider = (props) => {
     cartData[itemId][size] = quantity;
 
     setCartItems(cartData);
+    // Store cart in localStorage for persistence
+    localStorage.setItem('cartItems', JSON.stringify(cartData));
 
     if (token) {
       try {

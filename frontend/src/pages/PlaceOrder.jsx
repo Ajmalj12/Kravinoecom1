@@ -42,6 +42,9 @@ const PlaceOrder = () => {
     e.preventDefault();
 
     try {
+      // Show processing toast
+      toast.info("Processing your order...");
+      
       const orderItems = [];
 
       for (const items in cartItems) {
@@ -60,25 +63,37 @@ const PlaceOrder = () => {
         }
       }
 
+      // Check if cart is empty
+      if (orderItems.length === 0) {
+        toast.error("Your cart is empty. Please add items before placing an order.");
+        return;
+      }
+
       let orderData = {
         address: formData,
         items: orderItems,
         amount: getCartAmount() + delivery_fee,
       };
 
+      // Log the order data for debugging
+      console.log("Placing order with data:", orderData);
+
       switch (method) {
-        //API CALLS FOR COF
+        //API CALLS FOR COD
         case "cod":
           const res = await axios.post(
             backendUrl + "/api/order/place",
             orderData,
             { headers: { token } }
           );
+          console.log("COD order response:", res.data);
+          
           if (res.data.success) {
+            toast.success("Order placed successfully!");
             setCartItems({});
             navigate("/orders");
           } else {
-            toast.error(res.data.message);
+            toast.error(res.data.message || "Failed to place order");
           }
           break;
 
@@ -88,40 +103,41 @@ const PlaceOrder = () => {
             orderData,
             { headers: { token } }
           );
+          console.log("Stripe order response:", responseStripe.data);
 
           if (responseStripe.data.success) {
             const { session_url } = responseStripe.data;
             window.location.replace(session_url);
           } else {
-            toast.error(responseStripe.data.message);
+            toast.error(responseStripe.data.message || "Failed to create payment session");
           }
-
           break;
 
         default:
+          toast.error("Please select a payment method");
           break;
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.message);
+      console.error("Order placement error:", error);
+      toast.error(error.response?.data?.message || error.message || "An error occurred while placing your order");
     }
   };
 
   return (
     <form
       onSubmit={onSubmitHandler}
-      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t"
+      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t px-4 sm:px-6 lg:px-8"
     >
-      {/* LEST SIDE */}
+      {/* LEFT SIDE */}
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
         <div className="text-xl sm:text-2xl my-3">
           <Title text1={"DELIVERY"} text2={"INFORMATION"} />
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="First name"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="firstName"
             value={formData.firstName}
@@ -130,7 +146,7 @@ const PlaceOrder = () => {
           <input
             type="text"
             placeholder="Last name"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="lastName"
             value={formData.lastName}
@@ -141,7 +157,7 @@ const PlaceOrder = () => {
         <input
           type="email"
           placeholder="Email address"
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+          className="border border-gray-300 rounded py-2 px-4 w-full"
           onChange={onChangeHandler}
           name="email"
           value={formData.email}
@@ -151,18 +167,18 @@ const PlaceOrder = () => {
         <input
           type="text"
           placeholder="Street"
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+          className="border border-gray-300 rounded py-2 px-4 w-full"
           onChange={onChangeHandler}
           name="street"
           value={formData.street}
           required
         />
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="City"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="city"
             value={formData.city}
@@ -171,7 +187,7 @@ const PlaceOrder = () => {
           <input
             type="text"
             placeholder="State"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="state"
             value={formData.state}
@@ -179,11 +195,11 @@ const PlaceOrder = () => {
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="number"
             placeholder="Zipcode"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="zipcode"
             value={formData.zipcode}
@@ -192,7 +208,7 @@ const PlaceOrder = () => {
           <input
             type="text"
             placeholder="Country"
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+            className="border border-gray-300 rounded py-2 px-4 w-full"
             onChange={onChangeHandler}
             name="country"
             value={formData.country}
@@ -202,7 +218,7 @@ const PlaceOrder = () => {
         <input
           type="number"
           placeholder="Phone"
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+          className="border border-gray-300 rounded py-2 px-4 w-full"
           onChange={onChangeHandler}
           name="phone"
           value={formData.phone}
@@ -212,30 +228,30 @@ const PlaceOrder = () => {
 
       {/* RIGHT SIDE */}
 
-      <div className="mt-8">
-        <div className="mt-8 min-w-80">
+      <div className="mt-8 w-full sm:max-w-[400px]">
+        <div className="mt-8 min-w-80 border p-4 rounded-md shadow-sm">
           <CartTotal />
         </div>
-        <div className="mt-12">
+        <div className="mt-8 md:mt-12">
           <Title text1={"PAYMENT"} text2={"METHOD"} />
 
           {/* PAYMENT METHOD SELECTION */}
-          <div className="flex gap-3 flex-col lg:flex-row">
+          <div className="flex gap-3 flex-col lg:flex-row mt-4">
             <div
               onClick={() => setMethod("stripe")}
-              className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
+              className="flex items-center gap-3 border p-3 px-4 cursor-pointer rounded-md hover:border-gray-400 transition-colors"
             >
               <p
                 className={`min-w-3.5 h-3.5 border rounded-full ${
                   method === "stripe" ? "bg-green-400" : ""
                 }`}
               ></p>
-              <img src={assets.stripe_logo} className="h-5 mx-4" alt="" />
+              <img src={assets.stripe_logo} className="h-5 mx-4" alt="Stripe" />
             </div>
             
             <div
               onClick={() => setMethod("cod")}
-              className="flex items-center gap-3 border p-2 px-3 cursor-pointer"
+              className="flex items-center gap-3 border p-3 px-4 cursor-pointer rounded-md hover:border-gray-400 transition-colors"
             >
               <p
                 className={`min-w-3.5 h-3.5 border rounded-full ${
@@ -250,7 +266,7 @@ const PlaceOrder = () => {
 
           <div className="w-full text-end mt-8">
             <button
-              className="bg-black text-white px-16 py-3 text-sm"
+              className="bg-black text-white px-16 py-3 text-sm rounded-md hover:bg-gray-800 transition-colors"
               type="submit"
             >
               PLACE ORDER
