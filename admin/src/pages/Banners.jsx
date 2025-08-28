@@ -12,6 +12,10 @@ const Banners = ({ token }) => {
   const [section, setSection] = useState("hero");
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
+  const [imageTexts, setImageTexts] = useState([]);
+  const [imageLinks, setImageLinks] = useState([]);
+  const [editImageTexts, setEditImageTexts] = useState([]);
+  const [editImageLinks, setEditImageLinks] = useState([]);
 
   const fetchBanners = async () => {
     try {
@@ -34,10 +38,20 @@ const Banners = ({ token }) => {
       form.append("description", description);
       form.append("section", section);
       form.append("active", false); // Default to inactive
+      
+      // Add image texts and links
+      imageTexts.forEach((text, index) => {
+        form.append(`imageText_${index}`, text || '');
+      });
+      imageLinks.forEach((link, index) => {
+        form.append(`imageLink_${index}`, link || '');
+      });
+      
       const res = await axios.post(backendUrl + "/api/banner/add", form, { headers: { token } });
       if (res.data.success) {
         toast.success("Banner carousel added");
         setImages([]); setTitle(""); setDescription(""); setSection("hero");
+        setImageTexts([]); setImageLinks([]);
         // Clear file inputs
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = '');
@@ -123,6 +137,62 @@ const Banners = ({ token }) => {
     setDraggedIndex(null);
   };
 
+  const startEdit = (banner) => {
+    setEditingBanner(banner);
+    setEditImageTexts(banner.images.map(img => img.text || ''));
+    setEditImageLinks(banner.images.map(img => img.link || ''));
+  };
+
+  const cancelEdit = () => {
+    setEditingBanner(null);
+    setEditImageTexts([]);
+    setEditImageLinks([]);
+  };
+
+  const saveEdit = async () => {
+    try {
+      const form = new FormData();
+      form.append("id", editingBanner._id);
+      form.append("title", editingBanner.title);
+      form.append("description", editingBanner.description);
+      form.append("section", editingBanner.section);
+      form.append("active", editingBanner.active);
+
+      // Add image texts and links for existing images
+      editImageTexts.forEach((text, index) => {
+        form.append(`imageText_${index}`, text || '');
+      });
+      editImageLinks.forEach((link, index) => {
+        form.append(`imageLink_${index}`, link || '');
+      });
+
+      // Update images with new text/link data
+      const updatedImages = editingBanner.images.map((img, index) => ({
+        ...img,
+        text: editImageTexts[index] || '',
+        link: editImageLinks[index] || ''
+      }));
+
+      // Use updateImageOrder to update the banner with new image data
+      const res = await axios.post(backendUrl + "/api/banner/update-order", {
+        id: editingBanner._id,
+        images: updatedImages
+      }, { headers: { token } });
+
+      if (res.data.success) {
+        toast.success("Banner updated successfully");
+        setEditingBanner(null);
+        setEditImageTexts([]);
+        setEditImageLinks([]);
+        fetchBanners();
+      } else {
+        toast.error(res.data.message || "Failed to update");
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.message);
+    }
+  };
+
   const remove = async (id) => {
     try {
       const res = await axios.post(backendUrl + "/api/banner/remove", { id }, { headers: { token } });
@@ -132,9 +202,13 @@ const Banners = ({ token }) => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-semibold mb-4">Banners</h1>
-      <form onSubmit={onSubmit} className="space-y-3 bg-white p-4 rounded border">
+    <div className="p-4 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Banner Management</h1>
+      
+      {/* CREATE NEW BANNER FORM */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 mb-8">
+        <h2 className="text-xl font-bold mb-4 text-blue-800">🎨 Create New Banner Carousel</h2>
+        <form onSubmit={onSubmit} className="space-y-6">
         <div>
           <label className="block text-sm mb-1">Banner Title *</label>
           <input className="border px-3 py-2 w-full" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Enter banner title" />
@@ -147,23 +221,78 @@ const Banners = ({ token }) => {
           <label className="block text-sm mb-1">Section</label>
           <select className="border px-3 py-2" value={section} onChange={(e)=>setSection(e.target.value)}>
             <option value="hero">Hero Section</option>
-            <option value="home">Home Section</option>
-            <option value="footer">Footer Section</option>
+            <option value="top">Top Banner (Between Latest & Live Offers)</option>
+            <option value="middle">Middle Banner (Between Live Offers & Best Sellers)</option>
           </select>
         </div>
         <div>
           <label className="block text-sm mb-1">Carousel Images * (Multiple images for carousel)</label>
-          <input type="file" accept="image/*" multiple onChange={(e)=>setImages([...e.target.files])} />
+          <input type="file" accept="image/*" multiple onChange={(e)=>{
+            const files = [...e.target.files];
+            setImages(files);
+            setImageTexts(new Array(files.length).fill(''));
+            setImageLinks(new Array(files.length).fill(''));
+          }} />
           {images.length > 0 && (
             <div className="mt-2 text-sm text-gray-600">
               Selected {images.length} image{images.length > 1 ? 's' : ''}: {images.map(img => img.name).join(', ')}
             </div>
           )}
         </div>
-        <button disabled={loading} className="bg-black text-white px-6 py-2 rounded disabled:opacity-60">{loading? 'Creating Carousel...' : 'Add Banner Carousel'}</button>
-      </form>
+        
+        {/* Image Text and Link Inputs */}
+        {images.length > 0 && (
+          <div className="space-y-4 bg-blue-50 p-4 rounded border">
+            <h3 className="text-base font-semibold text-blue-800">📝 Configure Each Image Text & Links:</h3>
+            <p className="text-sm text-blue-600">Add custom text overlay and clickable links for each carousel image</p>
+            {images.map((image, index) => (
+              <div key={index} className="border border-blue-200 p-4 rounded bg-white shadow-sm">
+                <h4 className="text-sm font-semibold mb-3 text-gray-800">🖼️ Image {index + 1}: {image.name}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-700">Display Text (optional)</label>
+                    <input 
+                      type="text"
+                      className="border border-gray-300 px-3 py-2 w-full text-sm rounded focus:border-blue-500 focus:outline-none"
+                      placeholder="Text to show on this image"
+                      value={imageTexts[index] || ''}
+                      onChange={(e) => {
+                        const newTexts = [...imageTexts];
+                        newTexts[index] = e.target.value;
+                        setImageTexts(newTexts);
+                      }}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This text will appear as overlay on the image</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-700">Click Link (optional)</label>
+                    <input 
+                      type="url"
+                      className="border border-gray-300 px-3 py-2 w-full text-sm rounded focus:border-blue-500 focus:outline-none"
+                      placeholder="https://example.com"
+                      value={imageLinks[index] || ''}
+                      onChange={(e) => {
+                        const newLinks = [...imageLinks];
+                        newLinks[index] = e.target.value;
+                        setImageLinks(newLinks);
+                      }}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">URL to open when image is clicked</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button disabled={loading} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors">
+          {loading? '🔄 Creating Carousel...' : '✨ Add Banner Carousel'}
+        </button>
+        </form>
+      </div>
 
-      <h2 className="text-lg font-semibold mt-8 mb-3">Existing Banner Carousels</h2>
+      {/* EXISTING BANNERS SECTION */}
+      <div className="bg-white p-6 rounded-lg border shadow-sm">
+        <h2 className="text-xl font-bold mb-4 text-gray-800">📋 Existing Banner Carousels</h2>
       <div className="grid md:grid-cols-1 gap-4">
         {banners.map((b)=> (
           <div key={b._id} className="bg-white border rounded p-4 space-y-3">
@@ -180,6 +309,9 @@ const Banners = ({ token }) => {
                   </span>
                   <input type="checkbox" checked={b.active} onChange={()=>toggleActive(b)} />
                 </div>
+                <button onClick={()=>startEdit(b)} className="text-blue-600 text-sm hover:text-blue-800 font-medium">
+                  ✏️ Edit Text/Links
+                </button>
                 <button onClick={()=>remove(b._id)} className="text-red-600 text-sm hover:text-red-800">Remove</button>
               </div>
             </div>
@@ -235,8 +367,8 @@ const Banners = ({ token }) => {
                 <label className="block text-xs mb-1">Section</label>
                 <select className="border px-2 py-1 text-sm w-full" defaultValue={b.section} onChange={(e)=>updateBanner(b,{ section: e.target.value })}>
                   <option value="hero">Hero</option>
-                  <option value="home">Home</option>
-                  <option value="footer">Footer</option>
+                  <option value="top">Top Banner</option>
+                  <option value="middle">Middle Banner</option>
                 </select>
               </div>
               <div className="md:col-span-2">
@@ -244,6 +376,64 @@ const Banners = ({ token }) => {
                 <textarea className="border px-2 py-1 text-sm w-full h-16 resize-none" defaultValue={b.description} onBlur={(e)=>updateBanner(b,{ description: e.target.value })} />
               </div>
             </div>
+
+            {/* Edit Modal for Text/Links */}
+            {editingBanner && editingBanner._id === b._id && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3 text-yellow-800">✏️ Edit Image Text & Links</h3>
+                <div className="space-y-4">
+                  {editingBanner.images.map((image, index) => (
+                    <div key={index} className="border border-yellow-300 p-4 rounded bg-white">
+                      <h4 className="text-sm font-semibold mb-3 text-gray-800">🖼️ Image {index + 1}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2 text-gray-700">Display Text</label>
+                          <input 
+                            type="text"
+                            className="border border-gray-300 px-3 py-2 w-full text-sm rounded focus:border-yellow-500 focus:outline-none"
+                            placeholder="Text to show on this image"
+                            value={editImageTexts[index] || ''}
+                            onChange={(e) => {
+                              const newTexts = [...editImageTexts];
+                              newTexts[index] = e.target.value;
+                              setEditImageTexts(newTexts);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2 text-gray-700">Click Link</label>
+                          <input 
+                            type="url"
+                            className="border border-gray-300 px-3 py-2 w-full text-sm rounded focus:border-yellow-500 focus:outline-none"
+                            placeholder="https://example.com"
+                            value={editImageLinks[index] || ''}
+                            onChange={(e) => {
+                              const newLinks = [...editImageLinks];
+                              newLinks[index] = e.target.value;
+                              setEditImageLinks(newLinks);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button 
+                    onClick={saveEdit}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 font-medium"
+                  >
+                    ✅ Save Changes
+                  </button>
+                  <button 
+                    onClick={cancelEdit}
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                  >
+                    ❌ Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {banners.length === 0 && (
@@ -251,6 +441,7 @@ const Banners = ({ token }) => {
             No banner carousels created yet. Add your first carousel above.
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,5 +1,48 @@
 import wishlistModel from "../models/wishlistModel.js";
 import productModel from "../models/productModel.js";
+import discountModel from "../models/discountModel.js";
+
+// Helper function to calculate discounted price
+const calculateDiscountedPrice = async (productId, originalPrice) => {
+  try {
+    const discount = await discountModel.findOne({
+      applicableProducts: productId,
+      active: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    });
+
+    if (!discount) return null;
+
+    let discountAmount = 0;
+    if (discount.type === 'percentage') {
+      discountAmount = (originalPrice * discount.value) / 100;
+      // Apply max discount limit if specified
+      if (discount.maxDiscountAmount && discountAmount > discount.maxDiscountAmount) {
+        discountAmount = discount.maxDiscountAmount;
+      }
+    } else {
+      discountAmount = discount.value;
+    }
+
+    const discountedPrice = Math.max(0, originalPrice - discountAmount);
+
+    return {
+      discountedPrice,
+      originalPrice,
+      discountAmount,
+      discount: {
+        type: discount.type,
+        value: discount.value,
+        title: discount.title,
+        description: discount.description
+      }
+    };
+  } catch (error) {
+    console.log('Error calculating discount:', error);
+    return null;
+  }
+};
 
 // Get user's wishlist
 export const getWishlist = async (req, res) => {
@@ -14,7 +57,22 @@ export const getWishlist = async (req, res) => {
       wishlist = await wishlistModel.create({ userId, products: [] });
     }
     
-    res.json({ success: true, wishlist: wishlist.products });
+    // Calculate discounted prices for all wishlist products
+    const wishlistWithDiscounts = await Promise.all(
+      wishlist.products.map(async (item) => {
+        const discountInfo = await calculateDiscountedPrice(item.productId._id, item.productId.price);
+        return {
+          ...item.toObject(),
+          productId: {
+            ...item.productId.toObject(),
+            discountInfo,
+            finalPrice: discountInfo ? discountInfo.discountedPrice : item.productId.price
+          }
+        };
+      })
+    );
+    
+    res.json({ success: true, wishlist: wishlistWithDiscounts });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });

@@ -3,11 +3,14 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import ShopContextProvider from "./context/ShopContext";
+import WishlistContextProvider from "./context/WishlistContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <ShopContextProvider>
-      <App />
+      <WishlistContextProvider>
+        <App />
+      </WishlistContextProvider>
     </ShopContextProvider>
   </BrowserRouter>
 );

@@ -1,10 +1,14 @@
 import React, { useContext, useState } from "react";
 import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
+import AddressSelection from "../components/AddressSelection";
+import NewsletterBox from "../components/NewsletterBox";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
+import { CreditCard, Truck, MapPin, ShoppingBag } from "lucide-react";
 
 const PlaceOrder = () => {
   const {
@@ -12,6 +16,8 @@ const PlaceOrder = () => {
     delivery_fee,
     cartItems,
     getCartAmount,
+    getOriginalCartAmount,
+    getTotalDiscount,
     navigate,
     backendUrl,
     token,
@@ -19,27 +25,23 @@ const PlaceOrder = () => {
   } = useContext(ShopContext);
 
   const [method, setMethod] = useState("cod");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    zipcode: "",
-    phone: "",
-    state: "",
-    street: "",
-    country: "",
-    city: "",
-  });
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
-  const onChangeHandler = (e) => {
-    const name = e.target.name;
-    const value = e.target.value;
-
-    setFormData((p) => ({ ...p, [name]: value }));
+  const handleAddressSelect = (address) => {
+    setSelectedAddress(address);
   };
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Check if address is selected
+    if (!selectedAddress) {
+      toast.error("Please select a delivery address");
+      return;
+    }
 
     try {
       // Show processing toast
@@ -57,6 +59,10 @@ const PlaceOrder = () => {
             if (itemInfo) {
               itemInfo.size = item;
               itemInfo.quantity = cartItems[items][item];
+              // Use backend-calculated final price
+              if (itemInfo.finalPrice) {
+                itemInfo.price = itemInfo.finalPrice;
+              }
               orderItems.push(itemInfo);
             }
           }
@@ -70,9 +76,11 @@ const PlaceOrder = () => {
       }
 
       let orderData = {
-        address: formData,
+        address: selectedAddress,
         items: orderItems,
         amount: getCartAmount() + delivery_fee,
+        originalAmount: getOriginalCartAmount() + delivery_fee,
+        totalDiscount: getTotalDiscount(),
       };
 
       // Log the order data for debugging
@@ -124,157 +132,195 @@ const PlaceOrder = () => {
   };
 
   return (
-    <form
-      onSubmit={onSubmitHandler}
-      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t px-4 sm:px-6 lg:px-8"
-    >
-      {/* LEFT SIDE */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl my-3">
-          <Title text1={"DELIVERY"} text2={"INFORMATION"} />
+    <div className="w-full">
+      {/* Hero Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full bg-gradient-to-r from-gray-50 to-gray-100 py-16 md:py-20"
+      >
+        <div className="w-full px-4 md:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <ShoppingBag className="w-8 h-8 text-gray-700" />
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+              Checkout
+            </h1>
+          </div>
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+            Complete your order by selecting delivery address and payment method
+          </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="First name"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="firstName"
-            value={formData.firstName}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Last name"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="lastName"
-            value={formData.lastName}
-            required
-          />
-        </div>
+      </motion.div>
 
-        <input
-          type="email"
-          placeholder="Email address"
-          className="border border-gray-300 rounded py-2 px-4 w-full"
-          onChange={onChangeHandler}
-          name="email"
-          value={formData.email}
-          required
-        />
+      {/* Main Checkout Content */}
+      <div className="w-full py-8 md:py-12" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="w-full px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Address Selection */}
+            <div className="lg:col-span-2">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+              >
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-6 h-6 text-gray-700" />
+                    <h2 className="text-xl font-semibold text-gray-900">Delivery Address</h2>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Choose where you want your order delivered</p>
+                </div>
+                
+                <div className="p-6" style={{ position: 'relative', zIndex: 2 }}>
+                  <AddressSelection
+                    onAddressSelect={handleAddressSelect}
+                    selectedAddressId={selectedAddress?._id}
+                  />
+                </div>
+              </motion.div>
 
-        <input
-          type="text"
-          placeholder="Street"
-          className="border border-gray-300 rounded py-2 px-4 w-full"
-          onChange={onChangeHandler}
-          name="street"
-          value={formData.street}
-          required
-        />
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="City"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="city"
-            value={formData.city}
-            required
-          />
-          <input
-            type="text"
-            placeholder="State"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="state"
-            value={formData.state}
-            required
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="number"
-            placeholder="Zipcode"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="zipcode"
-            value={formData.zipcode}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Country"
-            className="border border-gray-300 rounded py-2 px-4 w-full"
-            onChange={onChangeHandler}
-            name="country"
-            value={formData.country}
-            required
-          />
-        </div>
-        <input
-          type="number"
-          placeholder="Phone"
-          className="border border-gray-300 rounded py-2 px-4 w-full"
-          onChange={onChangeHandler}
-          name="phone"
-          value={formData.phone}
-          required
-        />
-      </div>
-
-      {/* RIGHT SIDE */}
-
-      <div className="mt-8 w-full sm:max-w-[400px]">
-        <div className="mt-8 min-w-80 border p-4 rounded-md shadow-sm">
-          <CartTotal />
-        </div>
-        <div className="mt-8 md:mt-12">
-          <Title text1={"PAYMENT"} text2={"METHOD"} />
-
-          {/* PAYMENT METHOD SELECTION */}
-          <div className="flex gap-3 flex-col lg:flex-row mt-4">
-            <div
-              onClick={() => setMethod("stripe")}
-              className="flex items-center gap-3 border p-3 px-4 cursor-pointer rounded-md hover:border-gray-400 transition-colors"
-            >
-              <p
-                className={`min-w-3.5 h-3.5 border rounded-full ${
-                  method === "stripe" ? "bg-green-400" : ""
-                }`}
-              ></p>
-              <img src={assets.stripe_logo} className="h-5 mx-4" alt="Stripe" />
+              {/* Payment Method */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mt-6"
+              >
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="w-6 h-6 text-gray-700" />
+                    <h2 className="text-xl font-semibold text-gray-900">Payment Method</h2>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Select your preferred payment option</p>
+                </div>
+                
+                <div className="p-6" style={{ position: 'relative', zIndex: 2 }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Stripe payment selected');
+                        setMethod("stripe");
+                      }}
+                      className={`flex items-center gap-4 border-2 p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                        method === "stripe" 
+                          ? "border-black bg-gray-50" 
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      style={{ 
+                        pointerEvents: 'auto', 
+                        zIndex: 50,
+                        position: 'relative',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        method === "stripe" ? "border-black" : "border-gray-300"
+                      }`}>
+                        {method === "stripe" && (
+                          <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <img src={assets.stripe_logo} className="h-6" alt="Stripe" />
+                        <div>
+                          <p className="font-medium text-gray-900">Credit/Debit Card</p>
+                          <p className="text-sm text-gray-500">Secure payment with Stripe</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('COD payment selected');
+                        setMethod("cod");
+                      }}
+                      className={`flex items-center gap-4 border-2 p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                        method === "cod" 
+                          ? "border-black bg-gray-50" 
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      style={{ 
+                        pointerEvents: 'auto', 
+                        zIndex: 50,
+                        position: 'relative',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        method === "cod" ? "border-black" : "border-gray-300"
+                      }`}>
+                        {method === "cod" && (
+                          <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Truck className="w-6 h-6 text-gray-700" />
+                        <div>
+                          <p className="font-medium text-gray-900">Cash on Delivery</p>
+                          <p className="text-sm text-gray-500">Pay when you receive</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-            
-            <div
-              onClick={() => setMethod("cod")}
-              className="flex items-center gap-3 border p-3 px-4 cursor-pointer rounded-md hover:border-gray-400 transition-colors"
-            >
-              <p
-                className={`min-w-3.5 h-3.5 border rounded-full ${
-                  method === "cod" ? "bg-green-400" : ""
-                }`}
-              ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">
-                CASH ON DELIVERY
-              </p>
+
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm sticky top-8"
+              >
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+                </div>
+                
+                <div className="p-6" style={{ position: 'relative', zIndex: 3 }}>
+                  <CartTotal />
+                  
+                  <button
+                    type="button"
+                    className="w-full bg-black text-white py-4 rounded-lg hover:bg-gray-800 active:bg-gray-900 transition-colors font-medium text-lg mt-6 cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Place Order button clicked');
+                      onSubmitHandler(e);
+                    }}
+                    style={{ 
+                      pointerEvents: 'auto', 
+                      zIndex: 100,
+                      position: 'relative',
+                      touchAction: 'manipulation'
+                    }}
+                  >
+                    PLACE ORDER
+                  </button>
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-gray-500">
+                      By placing this order, you agree to our terms and conditions
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
-
-          <div className="w-full text-end mt-8">
-            <button
-              className="bg-black text-white px-16 py-3 text-sm rounded-md hover:bg-gray-800 transition-colors"
-              type="submit"
-            >
-              PLACE ORDER
-            </button>
-          </div>
         </div>
       </div>
-    </form>
+
+      {/* Newsletter Section */}
+      <NewsletterBox />
+    </div>
   );
 };
 

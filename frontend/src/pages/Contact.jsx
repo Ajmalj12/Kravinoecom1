@@ -19,42 +19,180 @@ const Contact = () => {
   const heroImage = pageContent?.contact?.heroImage;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-12 flex flex-col items-center">
-      <motion.div className="text-center text-black" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+    <div className="min-h-screen bg-white w-full">
+      {/* Title Section */}
+      <motion.div 
+        className="text-center pt-4 sm:pt-8 pb-8 sm:pb-12 px-4 sm:px-6" 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.6 }}
+      >
         <Title text1={title1} text2={title2} />
-        <p className="mt-3 text-lg max-w-xl mx-auto text-gray-600">{subtitle}</p>
+        <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
       </motion.div>
 
-      <motion.div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-10 max-w-6xl w-full bg-gray-100 shadow-xl rounded-2xl p-8 border border-gray-300" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }}>
-        <div className="w-full sm:w-1/2 flex justify-center">
-          {heroImage ? (
-            <motion.img src={heroImage} alt="Contact" className="rounded-xl shadow-lg" whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }} />
-          ) : null}
-        </div>
+      {/* Hero Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="mb-16 px-4 sm:px-6"
+      >
+        {heroImage && (
+          <div className="w-full h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg mb-8">
+            <img src={heroImage} className="w-full h-full object-cover" alt="Contact Hero" />
+          </div>
+        )}
+      </motion.div>
 
-        <div className="w-full sm:w-1/2 flex flex-col gap-6 text-black">
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
-            <h3 className="text-2xl font-bold">{addressTitle}</h3>
-            <p className="text-lg opacity-90 mt-1">{address}</p>
+      {/* Contact Information Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="mb-16 px-4 sm:px-6"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Address Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="bg-white border border-gray-200 p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+              <div className="w-6 h-6 bg-white rounded-sm"></div>
+            </div>
+            <h3 className="text-xl font-bold text-black mb-4">{pageContent?.contact?.locationTitle || 'Our Location'}</h3>
+            <p className="text-gray-600 leading-relaxed mb-2">{address}</p>
+            <p className="text-gray-600 leading-relaxed">{pageContent?.contact?.addressLine2 || ''}</p>
+            <p className="text-gray-600 leading-relaxed">{pageContent?.contact?.city || ''} {pageContent?.contact?.zipCode || ''}</p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.5 }}>
-            <h3 className="text-2xl font-bold">{infoTitle}</h3>
-            <p className="text-lg opacity-90 mt-1">Tel: {phone} <br /> Email: {email}</p>
+          {/* Contact Info Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="bg-white border border-gray-200 p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+              <div className="w-6 h-6 bg-white rounded-sm"></div>
+            </div>
+            <h3 className="text-xl font-bold text-black mb-4">{pageContent?.contact?.contactTitle || 'Get In Touch'}</h3>
+            <div className="space-y-3">
+              <div className="flex items-center text-gray-600">
+                <span className="font-medium mr-2">Phone:</span>
+                <span>{phone}</span>
+              </div>
+              <div className="flex items-center text-gray-600">
+                <span className="font-medium mr-2">Email:</span>
+                <span>{email}</span>
+              </div>
+              <div className="flex items-center text-gray-600">
+                <span className="font-medium mr-2">Hours:</span>
+                <span>{pageContent?.contact?.hours || 'Mon-Fri 9AM-6PM'}</span>
+              </div>
+            </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }}>
-            <h3 className="text-2xl font-bold">{careersTitle}</h3>
-            <p className="text-lg opacity-90 mt-1">{careersBody}</p>
+          {/* Support Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6, delay: 1.0 }}
+            className="bg-white border border-gray-200 p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow md:col-span-2 lg:col-span-1"
+          >
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+              <div className="w-6 h-6 bg-white rounded-sm"></div>
+            </div>
+            <h3 className="text-xl font-bold text-black mb-4">{pageContent?.contact?.supportTitle || 'Customer Support'}</h3>
+            <p className="text-gray-600 leading-relaxed mb-6">{pageContent?.contact?.supportDescription || 'Need help with your order? Our customer support team is here to assist you with any questions or concerns.'}</p>
+            <button className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors">
+              {pageContent?.contact?.supportButtonText || 'Contact Support'}
+            </button>
           </motion.div>
-
-          <motion.a href="#" className="mt-4 w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold transition-transform transform hover:scale-105 hover:bg-blue-500" whileHover={{ scale: 1.1 }}>
-            Explore Jobs
-          </motion.a>
         </div>
       </motion.div>
 
-      <motion.div className="mt-16 w-full max-w-4xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 1 }}>
+      {/* Contact Form Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+        className="mb-16 px-4 sm:px-6"
+      >
+        <div className="bg-gray-50 rounded-lg p-8 sm:p-12 border border-gray-200">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-black text-center mb-8">{pageContent?.contact?.formTitle || 'Send us a Message'}</h2>
+            <form className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                    placeholder="Your Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                  placeholder="How can we help?"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <textarea
+                  rows="6"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                  placeholder="Tell us more about your inquiry..."
+                ></textarea>
+              </div>
+              <div className="text-center">
+                <button
+                  type="submit"
+                  className="px-8 py-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                >
+                  {pageContent?.contact?.submitButtonText || 'Send Message'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Map Section */}
+      {pageContent?.contact?.mapEmbedCode && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.4 }}
+          className="mb-16 px-4 sm:px-6"
+        >
+          <div className="bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200">
+            <div className="h-96 w-full" dangerouslySetInnerHTML={{ __html: pageContent.contact.mapEmbedCode }}></div>
+          </div>
+        </motion.div>
+      )}
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.6, delay: 1.6 }}
+        className="mb-16 px-4 sm:px-6"
+      >
         <NewsletterBox />
       </motion.div>
     </div>

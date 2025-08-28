@@ -24,14 +24,13 @@ const ShopContextProvider = (props) => {
 
   const navigate = useNavigate();
 
-  const addToCart = async (itemId, size, price = null) => {
+  const addToCart = async (itemId, size) => {
     if (!size) {
-      toast.error("Select product size!");
+      toast.error("Select Product Size");
       return;
     }
 
     let cartData = structuredClone(cartItems);
-
     if (cartData[itemId]) {
       if (cartData[itemId][size]) {
         cartData[itemId][size] += 1;
@@ -42,23 +41,14 @@ const ShopContextProvider = (props) => {
       cartData[itemId] = {};
       cartData[itemId][size] = 1;
     }
-
-    // Store discounted price if provided
-    if (price !== null) {
-      if (!cartData[itemId].discountedPrice) {
-        cartData[itemId].discountedPrice = price;
-      }
-    }
-
     setCartItems(cartData);
-    // Store cart in localStorage for persistence
     localStorage.setItem('cartItems', JSON.stringify(cartData));
 
     if (token) {
       try {
         await axios.post(
           backendUrl + "/api/cart/add",
-          { itemId, size, price },
+          { itemId, size },
           { headers: { token } }
         );
       } catch (e) {
@@ -113,9 +103,9 @@ const ShopContextProvider = (props) => {
 
       for (const item in cartItems[items]) {
         try {
-          if (cartItems[items][item] > 0 && item !== 'discountedPrice') {
-            // Use discounted price if available, otherwise use original price
-            const priceToUse = cartItems[items].discountedPrice || itemInfo.price;
+          if (cartItems[items][item] > 0) {
+            // Use backend-calculated final price if available, otherwise use original price
+            const priceToUse = itemInfo?.finalPrice || itemInfo?.price || 0;
             totalAmount += priceToUse * cartItems[items][item];
           }
         } catch (e) {}
@@ -123,6 +113,27 @@ const ShopContextProvider = (props) => {
     }
 
     return totalAmount;
+  };
+
+  const getOriginalCartAmount = () => {
+    let totalAmount = 0;
+    for (const items in cartItems) {
+      let itemInfo = products.find((product) => product._id === items);
+
+      for (const item in cartItems[items]) {
+        try {
+          if (cartItems[items][item] > 0) {
+            totalAmount += (itemInfo?.price || 0) * cartItems[items][item];
+          }
+        } catch (e) {}
+      }
+    }
+
+    return totalAmount;
+  };
+
+  const getTotalDiscount = () => {
+    return getOriginalCartAmount() - getCartAmount();
   };
 
   const getProductsData = async () => {
@@ -176,30 +187,6 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  const getDiscountForProduct = (productId, productPrice) => {
-    const applicableDiscount = discounts.find(d => 
-      d.applicableProducts.some(p => p._id === productId)
-    );
-    
-    if (applicableDiscount) {
-      let discountAmount = 0;
-      if (applicableDiscount.type === 'percentage') {
-        discountAmount = (productPrice * applicableDiscount.value) / 100;
-        if (applicableDiscount.maxDiscountAmount && discountAmount > applicableDiscount.maxDiscountAmount) {
-          discountAmount = applicableDiscount.maxDiscountAmount;
-        }
-      } else {
-        discountAmount = applicableDiscount.value;
-      }
-      const discountedPrice = Math.max(0, productPrice - discountAmount);
-      return {
-        discount: applicableDiscount,
-        discountedPrice,
-        originalPrice: productPrice
-      };
-    }
-    return null;
-  };
 
   const getUserCart = async (token) => {
     try {
@@ -260,6 +247,8 @@ const ShopContextProvider = (props) => {
     getCartCount,
     updateQuantity,
     getCartAmount,
+    getOriginalCartAmount,
+    getTotalDiscount,
     navigate,
     backendUrl,
     token,
@@ -268,7 +257,6 @@ const ShopContextProvider = (props) => {
     pageContent,
     fetchPageContent,
     discounts,
-    getDiscountForProduct,
     categories,
     sizes,
   };

@@ -150,7 +150,16 @@ const Order = ({ token }) => {
                   </td>
                   <td className="px-3 py-4">
                     <div className="text-sm font-medium text-gray-900">
-                      {currency}{order.amount}
+                      {order.totalDiscount > 0 ? (
+                        <>
+                          <span className="text-red-600">{currency}{order.amount}</span>
+                          <div className="text-xs text-gray-500 line-through">
+                            {currency}{order.originalAmount || order.amount}
+                          </div>
+                        </>
+                      ) : (
+                        <span>{currency}{order.amount}</span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500">
                       {order.payment ? 'Paid' : 'Pending'}
@@ -296,6 +305,24 @@ const Order = ({ token }) => {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Items</span>
                       <span className="font-medium">{selectedOrder.items.length}</span>
+                    </div>
+                    {selectedOrder.totalDiscount > 0 && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Original Amount</span>
+                          <span className="text-gray-500 line-through">{currency}{selectedOrder.originalAmount}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-600">Discount</span>
+                          <span className="text-green-600 font-medium">-{currency}{selectedOrder.totalDiscount}</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Total Amount</span>
+                      <span className={`font-bold text-lg ${selectedOrder.totalDiscount > 0 ? "text-red-600" : ""}`}>
+                        {currency}{selectedOrder.amount}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Payment Method</span>

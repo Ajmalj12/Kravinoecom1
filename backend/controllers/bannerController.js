@@ -7,10 +7,24 @@ export const listBanners = async (req, res) => {
     const query = {};
     if (!includeInactive) query.active = true;
     if (section) query.section = section;
+    
+    console.log('Banner API Query:', query);
+    console.log('Section requested:', section);
+    
     const banners = await bannerModel.find(query).sort({ order: 1, createdAt: -1 });
+    
+    console.log('Found banners:', banners.length);
+    console.log('Banner details:', banners.map(b => ({ 
+      id: b._id, 
+      title: b.title, 
+      section: b.section, 
+      active: b.active,
+      imageCount: b.images?.length || 0
+    })));
+    
     res.json({ success: true, banners });
   } catch (e) {
-    console.log(e);
+    console.log('Banner API Error:', e);
     res.json({ success: false, message: e.message });
   }
 };
@@ -33,7 +47,15 @@ export const addBanner = async (req, res) => {
     const images = [];
     for (let i = 0; i < imageFiles.length; i++) {
       const uploaded = await cloudinary.uploader.upload(imageFiles[i].path, { resource_type: "image" });
-      images.push({ url: uploaded.secure_url, alt: title, order: i });
+      const imageText = req.body[`imageText_${i}`] || '';
+      const imageLink = req.body[`imageLink_${i}`] || '';
+      images.push({ 
+        url: uploaded.secure_url, 
+        alt: title, 
+        text: imageText,
+        link: imageLink,
+        order: i 
+      });
     }
 
     const banner = new bannerModel({ title, description, section, active, images });
@@ -69,7 +91,15 @@ export const updateBanner = async (req, res) => {
       const images = [];
       for (let i = 0; i < imageFiles.length; i++) {
         const uploaded = await cloudinary.uploader.upload(imageFiles[i].path, { resource_type: "image" });
-        images.push({ url: uploaded.secure_url, alt: title || banner.title, order: i });
+        const imageText = req.body[`imageText_${i}`] || '';
+        const imageLink = req.body[`imageLink_${i}`] || '';
+        images.push({ 
+          url: uploaded.secure_url, 
+          alt: title || banner.title, 
+          text: imageText,
+          link: imageLink,
+          order: i 
+        });
       }
       update.images = images;
     }
@@ -133,7 +163,15 @@ export const addImages = async (req, res) => {
     
     for (let i = 0; i < imageFiles.length; i++) {
       const uploaded = await cloudinary.uploader.upload(imageFiles[i].path, { resource_type: "image" });
-      newImages.push({ url: uploaded.secure_url, alt: banner.title, order: startOrder + i });
+      const imageText = req.body[`imageText_${i}`] || '';
+      const imageLink = req.body[`imageLink_${i}`] || '';
+      newImages.push({ 
+        url: uploaded.secure_url, 
+        alt: banner.title, 
+        text: imageText,
+        link: imageLink,
+        order: startOrder + i 
+      });
     }
 
     banner.images.push(...newImages);

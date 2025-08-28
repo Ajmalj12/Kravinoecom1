@@ -12,13 +12,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // PLACING ORDERS USING COD
 export const placeOrder = async (req, res) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items, amount, address, originalAmount, totalDiscount } = req.body;
 
     const orderData = {
       userId,
       items,
       address,
       amount,
+      originalAmount: originalAmount || amount,
+      totalDiscount: totalDiscount || 0,
       paymentMethod: "COD",
       payment: false,
       date: Date.now(),
@@ -39,7 +41,7 @@ export const placeOrder = async (req, res) => {
 // PLACING ORDERS USING STRIPE
 export const placeOrderStripe = async (req, res) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items, amount, address, originalAmount, totalDiscount } = req.body;
 
     const { origin } = req.headers;
 
@@ -48,6 +50,8 @@ export const placeOrderStripe = async (req, res) => {
       items,
       address,
       amount,
+      originalAmount: originalAmount || amount,
+      totalDiscount: totalDiscount || 0,
       paymentMethod: "Stripe",
       payment: false,
       date: Date.now(),

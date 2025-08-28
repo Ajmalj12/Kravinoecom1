@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js";
 import userModel from "../models/userModel.js";
+import discountModel from "../models/discountModel.js";
 
 // function for add product
 export const addProduct = async (req, res) => {
@@ -58,11 +59,66 @@ export const addProduct = async (req, res) => {
   }
 };
 
+// Helper function to calculate discounted price
+const calculateDiscountedPrice = async (productId, originalPrice) => {
+  try {
+    const discount = await discountModel.findOne({
+      applicableProducts: productId,
+      active: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    });
+
+    if (!discount) return null;
+
+    let discountAmount = 0;
+    if (discount.type === 'percentage') {
+      discountAmount = (originalPrice * discount.value) / 100;
+      // Apply max discount limit if specified
+      if (discount.maxDiscountAmount && discountAmount > discount.maxDiscountAmount) {
+        discountAmount = discount.maxDiscountAmount;
+      }
+    } else {
+      discountAmount = discount.value;
+    }
+
+    const discountedPrice = Math.max(0, originalPrice - discountAmount);
+
+    return {
+      discountedPrice,
+      originalPrice,
+      discountAmount,
+      discount: {
+        type: discount.type,
+        value: discount.value,
+        title: discount.title,
+        description: discount.description
+      }
+    };
+  } catch (error) {
+    console.log('Error calculating discount:', error);
+    return null;
+  }
+};
+
 // function for list product
 export const listProduct = async (req, res) => {
   try {
     const products = await productModel.find({});
-    res.json({ success: true, products });
+    
+    // Calculate discounted prices for all products
+    const productsWithDiscounts = await Promise.all(
+      products.map(async (product) => {
+        const discountInfo = await calculateDiscountedPrice(product._id, product.price);
+        return {
+          ...product.toObject(),
+          discountInfo,
+          finalPrice: discountInfo ? discountInfo.discountedPrice : product.price
+        };
+      })
+    );
+    
+    res.json({ success: true, products: productsWithDiscounts });
   } catch (e) {
     console.log(e);
     res.json({ success: false, message: e.message });
@@ -86,7 +142,19 @@ export const singleProduct = async (req, res) => {
     const { productId } = req.body;
     const product = await productModel.findById(productId);
 
-    res.json({ success: true, product });
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+
+    // Calculate discounted price for single product
+    const discountInfo = await calculateDiscountedPrice(product._id, product.price);
+    const productWithDiscount = {
+      ...product.toObject(),
+      discountInfo,
+      finalPrice: discountInfo ? discountInfo.discountedPrice : product.price
+    };
+
+    res.json({ success: true, product: productWithDiscount });
   } catch (e) {
     console.log(e);
     res.json({ success: false, message: e.message });

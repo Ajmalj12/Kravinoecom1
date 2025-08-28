@@ -11,18 +11,12 @@ const LiveOffers = () => {
   useEffect(() => {
     const fetchLiveOffers = async () => {
       try {
-        const response = await axios.get(backendUrl + '/api/discount/homepage');
+        // Get products with discounts from the main product list
+        const response = await axios.get(backendUrl + '/api/product/list');
         if (response.data.success) {
-          const products = [];
-          response.data.discounts.forEach(discount => {
-            discount.applicableProducts.forEach(product => {
-              products.push({
-                ...product,
-                discount: discount
-              });
-            });
-          });
-          setDiscountedProducts(products);
+          // Filter products that have discount info
+          const productsWithDiscounts = response.data.products.filter(product => product.discountInfo);
+          setDiscountedProducts(productsWithDiscounts);
         }
       } catch (error) {
         console.error('Failed to fetch live offers:', error);
@@ -70,6 +64,9 @@ const LiveOffers = () => {
             id={item._id}
             price={item.price}
             image={item.image}
+            sizes={item.sizes}
+            discountInfo={item.discountInfo}
+            finalPrice={item.finalPrice}
           />
         ))}
       </div>

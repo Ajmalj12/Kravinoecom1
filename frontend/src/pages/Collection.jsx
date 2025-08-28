@@ -94,17 +94,17 @@ const Collection = () => {
   }, [category, subCategory, search, products, sortType]);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-6 sm:pt-10 border-t bg-white px-3 sm:px-0">
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-4 sm:pt-8 bg-white px-4 sm:px-6 w-full">
       {/* FILTER OPTIONS */}
-      <div className="min-w-60 sm:sticky sm:top-4 sm:self-start">
+      <div className="min-w-60 sm:sticky sm:top-28 sm:self-start sm:ml-4">
         <p
           onClick={() => setShowFilter(!showFilter)}
-          className="my-2 text-xl flex items-center cursor-pointer gap-2 justify-between sm:justify-start border-b pb-2 sm:border-0 sm:pb-0"
+          className="my-2 text-xl font-semibold text-black flex items-center cursor-pointer gap-2 justify-between sm:justify-start border-b border-gray-200 pb-2 sm:border-0 sm:pb-0"
         >
           FILTERS
           <img
             src={assets.dropdown_icon}
-            className={`h-3 sm:hidden ${showFilter ? "rotate-90" : ""}`}
+            className={`h-3 sm:hidden transition-transform ${showFilter ? "rotate-90" : ""}`}
             alt=""
           />
         </p>
@@ -112,9 +112,9 @@ const Collection = () => {
         {/* Filter Container with Scroll */}
         <div className={`${showFilter ? "" : "hidden"} sm:block max-h-[70vh] overflow-y-auto`}>
           {/* CATEGORY FILTER */}
-          <div className="border border-gray-300 pl-5 py-3 mt-3 sm:mt-6 rounded-md shadow-sm">
-            <p className="mb-3 text-sm font-medium">CATEGORIES</p>
-            <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
+          <div className="border border-gray-200 pl-5 py-4 mt-3 sm:mt-6 rounded-lg shadow-sm bg-white">
+            <p className="mb-3 text-sm font-semibold text-black">CATEGORIES</p>
+            <div className="flex flex-col gap-3 text-sm text-gray-700">
               {categories.map((cat) => (
                 <p key={cat._id} className="flex gap-2">
                   <input
@@ -124,7 +124,7 @@ const Collection = () => {
                     onChange={toggleCategory}
                     id={`category-${cat._id}`}
                   />
-                  <label htmlFor={`category-${cat._id}`} className="cursor-pointer">
+                  <label htmlFor={`category-${cat._id}`} className="cursor-pointer hover:text-black transition-colors">
                     {cat.name}
                   </label>
                 </p>
@@ -133,9 +133,9 @@ const Collection = () => {
           </div>
 
           {/* SUBCATEGORIES FILTER */}
-          <div className="border border-gray-300 pl-5 py-3 my-3 sm:my-5 rounded-md shadow-sm">
-            <p className="mb-3 text-sm font-medium">TYPE</p>
-            <div className="flex flex-col gap-2 text-sm font-light text-gray-700 max-h-48 overflow-y-auto">
+          <div className="border border-gray-200 pl-5 py-4 my-3 sm:my-5 rounded-lg shadow-sm bg-white">
+            <p className="mb-3 text-sm font-semibold text-black">TYPE</p>
+            <div className="flex flex-col gap-3 text-sm text-gray-700 max-h-48 overflow-y-auto">
               {categories.map((cat) => 
                 cat.subCategories?.map((sub) => (
                   <p key={`${cat._id}-${sub._id}`} className="flex gap-2">
@@ -146,7 +146,7 @@ const Collection = () => {
                       onChange={toggleSubCategory}
                       id={`subcategory-${sub._id}`}
                     />
-                    <label htmlFor={`subcategory-${sub._id}`} className="cursor-pointer">
+                    <label htmlFor={`subcategory-${sub._id}`} className="cursor-pointer hover:text-black transition-colors">
                       {sub.name}
                     </label>
                   </p>
@@ -159,35 +159,35 @@ const Collection = () => {
         {/* Mobile Apply Button */}
         <button 
           onClick={() => setShowFilter(false)}
-          className="w-full py-2 bg-black text-white rounded-md mt-3 mb-5 sm:hidden"
+          className="w-full py-3 bg-black text-white rounded-lg mt-4 mb-6 sm:hidden font-medium hover:bg-gray-800 transition-colors"
         >
           Apply Filters
         </button>
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="flex-1">
+      <div className="flex-1 sm:mr-4">
         {/* SEARCH BAR */}
-        <div className="mb-6">
-          <div className="flex items-center justify-center border border-gray-400 px-4 py-3 rounded-full bg-gray-50">
+        <div className="mb-8">
+          <div className="flex items-center border border-gray-300 px-4 py-3 rounded-lg bg-gray-50 hover:border-gray-400 transition-colors max-w-full">
             <input
               type="text"
               placeholder="Search products..."
-              className="flex-1 outline-none bg-inherit text-sm"
+              className="flex-1 outline-none bg-inherit text-sm text-gray-700 placeholder-gray-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <img src={assets.search_icon} className="w-4 ml-2" alt="Search" />
+            <img src={assets.search_icon} className="w-4 ml-2 opacity-60" alt="Search" />
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-base sm:text-2xl mb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-base sm:text-2xl mb-8">
           <Title text1={"ALL"} text2={"COLLECTIONS"} />
 
           {/* PRODUCT SORT */}
           <select
             onChange={(e) => setSortType(e.target.value)}
-            className="border-2 border-gray-300 text-sm px-2 py-1 rounded-md w-full sm:w-auto"
+            className="border border-gray-300 text-sm px-4 py-2 rounded-lg w-full sm:w-auto bg-white hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200"
           >
             <option value="relevant">Sort by: Relevant</option>
             <option value="low-high">Sort by: Low to High</option>
@@ -196,7 +196,7 @@ const Collection = () => {
         </div>
 
         {/* MAP PRODUCTS */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 gap-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6">
           {filterProducts.length > 0 ? (
             filterProducts.map((item, i) => (
               <ProductItem
@@ -205,17 +205,23 @@ const Collection = () => {
                 image={item.image}
                 name={item.name}
                 price={item.price}
+                sizes={item.sizes}
+                discountInfo={item.discountInfo}
+                finalPrice={item.finalPrice}
               />
             ))
           ) : (
-            <div className="col-span-full text-center py-10 text-gray-500">
-              <p>No products found matching your filters.</p>
-              <button 
-                onClick={() => {setCategory([]); setSubCategory([]);}} 
-                className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
-              >
-                Clear Filters
-              </button>
+            <div className="col-span-full text-center py-16 text-gray-500">
+              <div className="max-w-md mx-auto">
+                <p className="text-lg mb-2">No products found matching your filters.</p>
+                <p className="text-sm mb-6">Try adjusting your search criteria or clear filters to see all products.</p>
+                <button 
+                  onClick={() => {setCategory([]); setSubCategory([]);}} 
+                  className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Clear All Filters
+                </button>
+              </div>
             </div>
           )}
         </div>

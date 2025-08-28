@@ -10,18 +10,30 @@ import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import PlaceOrder from "./pages/PlaceOrder";
 import Orders from "./pages/Orders";
+import Wishlist from "./pages/Wishlist";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Verify from "./pages/Verify";
 import Profile from "./pages/Profile";
-import SearchBar from "./components/SearchBar";
+import AddressManagement from "./pages/AddressManagement";
+import OrderDetails from "./pages/OrderDetails";
 
 const App = () => {
   return (
-    <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] ">
-      <ToastContainer />
+    <div>
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        style={{ zIndex: 9999 }}
+      />
       <Navbar />
-      <SearchBar />
       <div className="pt-16 md:pt-20">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -33,8 +45,11 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/place-order" element={<PlaceOrder />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/address-management" element={<AddressManagement />} />
+          <Route path="/order-details/:orderId" element={<OrderDetails />} />
         </Routes>
       </div>
       <Footer />

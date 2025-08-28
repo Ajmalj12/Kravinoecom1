@@ -1,15 +1,18 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
+import { useWishlist } from "../context/WishlistContext";
 import { assets } from "../assets/assets";
 import RelatedProduct from "../components/RelatedProduct";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { Heart } from "lucide-react";
 
 const Product = () => {
   const { productId } = useParams();
   const { products, currency, cartItems, addToCart, token, backendUrl } = useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const [productData, setProductData] = useState(null);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
   const [reviews, setReviews] = useState([]);
@@ -19,6 +22,7 @@ const Product = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [discount, setDiscount] = useState(null);
   const [discountedPrice, setDiscountedPrice] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const renderStars = (value) => {
     const full = Math.round(value); // simple rounding to nearest whole star
@@ -32,19 +36,23 @@ const Product = () => {
   };
 
   const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        setImage(item.image[0]);
-        
-        // Select the first size as default if sizes are available
-        if (item.sizes && item.sizes.length > 0) {
-          setSize(item.sizes[0]);
-        }
-
-        return null;
+    if (!products || products.length === 0) {
+      console.log('No products available, skipping product data fetch');
+      return;
+    }
+    
+    const item = products.find(product => product._id === productId);
+    if (item) {
+      setProductData(item);
+      setImage(item.image[0]);
+      
+      // Select the first size as default if sizes are available
+      if (item.sizes && item.sizes.length > 0) {
+        setSize(item.sizes[0]);
       }
-    });
+    } else {
+      console.log('Product not found with ID:', productId);
+    }
   };
 
   const fetchDiscount = async () => {
@@ -89,19 +97,27 @@ const Product = () => {
   };
 
   useEffect(() => {
-    fetchProductData();
-    fetchReviews();
-  }, [productId]);
+    if (productId && products && products.length > 0) {
+      fetchProductData();
+      fetchReviews();
+      setLoading(false);
+    } else if (productId && (!products || products.length === 0)) {
+      // If products haven't loaded yet, keep loading state
+      setLoading(true);
+    }
+  }, [productId, products]);
 
   useEffect(() => {
-    if (productData) {
+    if (productData && productId && backendUrl) {
       fetchDiscount();
     }
   }, [productData, productId, backendUrl]);
 
   // Scroll to top whenever product changes
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    if (productId) {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
   }, [productId]);
 
   const submitReview = async (e) => {
@@ -137,7 +153,16 @@ const Product = () => {
     }
   };
 
-  return productData ? (
+  // Show loading state while waiting for data
+  if (loading || !productData) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  return (
     <div className="border-t-2 pt-6 md:pt-10 px-4 md:px-6 lg:px-8 transition-opacity ease-in duration-500 opacity-100">
       {/* PRODUCT DATA */}
       <div className="flex gap-6 md:gap-12 flex-col md:flex-row">
@@ -208,21 +233,40 @@ const Product = () => {
             </div>
           </div>
 
-          <button
-            className="w-full md:w-auto bg-black text-white px-8 py-3 text-sm active:bg-gray-700 hover:bg-gray-800 transition-colors"
-            onClick={() => {
-              if (!size) {
-                toast.error("Must select product size!");
-                return;
-              }
-              // Add to cart with discounted price if available
-              const priceToUse = discountedPrice || productData.price;
-              addToCart(productData._id, size, priceToUse);
-              toast.success("Added to cart!");
-            }}
-          >
-            ADD TO CART
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <button
+              className="flex-1 bg-black text-white px-8 py-3 text-sm active:bg-gray-700 hover:bg-gray-800 transition-colors"
+              onClick={() => {
+                if (!size) {
+                  toast.error("Must select product size!");
+                  return;
+                }
+                // Add to cart with discounted price if available
+                const priceToUse = discountedPrice || productData.price;
+                addToCart(productData._id, size, priceToUse);
+                toast.success("Added to cart!");
+              }}
+            >
+              ADD TO CART
+            </button>
+            
+            <button
+              onClick={() => toggleWishlist(productData._id)}
+              className={`px-6 py-3 border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
+                isInWishlist(productData._id)
+                  ? "border-red-500 bg-red-50 text-red-600 hover:bg-red-100"
+                  : "border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-500"
+              }`}
+              title={isInWishlist(productData._id) ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart 
+                className={`w-5 h-5 ${isInWishlist(productData._id) ? "fill-current" : ""}`} 
+              />
+              <span className="text-sm font-medium">
+                {isInWishlist(productData._id) ? "WISHLISTED" : "WISHLIST"}
+              </span>
+            </button>
+          </div>
           <hr className="mt-8 w-full md:w-4/5" />
 
           <div className="text-xs md:text-sm text-gray-500 mt-5 flex flex-col gap-1">
@@ -304,12 +348,9 @@ const Product = () => {
         <RelatedProduct
           category={productData.category}
           subCategory={productData.subCategory}
-          excludeId={productId}
         />
       </div>
     </div>
-  ) : (
-    <div className="opacity-0 min-h-screen"></div>
   );
 };
 
