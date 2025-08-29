@@ -85,6 +85,13 @@ const Navbar = () => {
           )}
         </div>
 
+        {/* Recently Viewed Icon */}
+        <Link to="/recently-viewed" className="relative p-2 hover:bg-gray-100 rounded-full transition-all duration-200" title="Recently Viewed">
+          <svg className="w-4 md:w-5 text-gray-600 hover:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </Link>
+
         {/* Wishlist Icon */}
         <Link to="/wishlist" className="relative p-2 hover:bg-gray-100 rounded-full transition-all duration-200">
           <Heart className="w-4 md:w-5 text-gray-600 hover:text-black transition-colors" />

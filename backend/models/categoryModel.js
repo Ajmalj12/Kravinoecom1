@@ -11,6 +11,14 @@ const categorySchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    image: {
+        type: String,
+        trim: true
+    },
+    showInNavigation: {
+        type: Boolean,
+        default: true
+    },
     subCategories: [{
         name: {
             type: String,
@@ -20,6 +28,14 @@ const categorySchema = new mongoose.Schema({
         description: {
             type: String,
             trim: true
+        },
+        image: {
+            type: String,
+            trim: true
+        },
+        showInNavigation: {
+            type: Boolean,
+            default: true
         }
     }],
     isActive: {

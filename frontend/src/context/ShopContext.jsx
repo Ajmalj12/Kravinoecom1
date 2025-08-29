@@ -225,6 +225,9 @@ const ShopContextProvider = (props) => {
     fetchPageContent('contact');
     fetchPageContent('global');
     fetchPageContent('home');
+    fetchPageContent('policy');
+    fetchPageContent('newsletter');
+    fetchPageContent('products');
   }, []);
 
   useEffect(() => {

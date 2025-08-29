@@ -15,6 +15,7 @@ import categoryRouter from "./routes/categoryRoute.js";
 import sizeRouter from "./routes/sizeRoute.js";
 import wishlistRouter from "./routes/wishlistRoutes.js";
 import addressRouter from "./routes/addressRoute.js";
+import { swaggerUi, specs } from "./swagger.js";
 
 //App Config
 const app = express();
@@ -38,6 +39,13 @@ app.use("/api/category", categoryRouter);
 app.use("/api/size", sizeRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/address", addressRouter);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Ecommerce API Documentation"
+}));
 
 app.get("/", (req, res) => {
   res.send("IT'S WORKING WOWWWW");

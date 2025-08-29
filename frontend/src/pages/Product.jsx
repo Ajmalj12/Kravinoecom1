@@ -4,6 +4,8 @@ import { ShopContext } from "../context/ShopContext";
 import { useWishlist } from "../context/WishlistContext";
 import { assets } from "../assets/assets";
 import RelatedProduct from "../components/RelatedProduct";
+import RecentlyViewed from "../components/RecentlyViewed";
+import { addToRecentlyViewed } from "../utils/recentlyViewed";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Heart } from "lucide-react";
@@ -110,6 +112,8 @@ const Product = () => {
   useEffect(() => {
     if (productData && productId && backendUrl) {
       fetchDiscount();
+      // Add to recently viewed when product data is loaded
+      addToRecentlyViewed(productData);
     }
   }, [productData, productId, backendUrl]);
 
@@ -349,6 +353,11 @@ const Product = () => {
           category={productData.category}
           subCategory={productData.subCategory}
         />
+      </div>
+
+      {/* RECENTLY VIEWED PRODUCTS */}
+      <div className="mt-10 md:mt-16">
+        <RecentlyViewed maxItems={6} />
       </div>
     </div>
   );

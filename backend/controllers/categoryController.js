@@ -1,4 +1,5 @@
 import categoryModel from "../models/categoryModel.js";
+import { v2 as cloudinary } from 'cloudinary';
 
 // Get all categories
 const getCategories = async (req, res) => {
@@ -192,6 +193,138 @@ const seedCategories = async (req, res) => {
     }
 };
 
+// Upload category image
+const uploadCategoryImage = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        
+        if (!req.file) {
+            return res.json({ success: false, message: "No image file provided" });
+        }
+
+        // Upload image to cloudinary
+        const imageUpload = await cloudinary.uploader.upload(req.file.path, {
+            resource_type: "image"
+        });
+
+        // Update category with image URL
+        const category = await categoryModel.findByIdAndUpdate(
+            categoryId,
+            { image: imageUpload.secure_url },
+            { new: true }
+        );
+
+        if (!category) {
+            return res.json({ success: false, message: "Category not found" });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Category image uploaded successfully",
+            imageUrl: imageUpload.secure_url,
+            category 
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Upload subcategory image
+const uploadSubcategoryImage = async (req, res) => {
+    try {
+        const { categoryId, subcategoryId } = req.params;
+        
+        if (!req.file) {
+            return res.json({ success: false, message: "No image file provided" });
+        }
+
+        // Upload image to cloudinary
+        const imageUpload = await cloudinary.uploader.upload(req.file.path, {
+            resource_type: "image"
+        });
+
+        // Find category and update subcategory image
+        const category = await categoryModel.findById(categoryId);
+        if (!category) {
+            return res.json({ success: false, message: "Category not found" });
+        }
+
+        const subcategory = category.subCategories.id(subcategoryId);
+        if (!subcategory) {
+            return res.json({ success: false, message: "Subcategory not found" });
+        }
+
+        subcategory.image = imageUpload.secure_url;
+        await category.save();
+
+        res.json({ 
+            success: true, 
+            message: "Subcategory image uploaded successfully",
+            imageUrl: imageUpload.secure_url,
+            category 
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Toggle category visibility in navigation
+const toggleCategoryVisibility = async (req, res) => {
+    try {
+        const { categoryId, showInNavigation } = req.body;
+
+        const category = await categoryModel.findByIdAndUpdate(
+            categoryId,
+            { showInNavigation },
+            { new: true }
+        );
+
+        if (!category) {
+            return res.json({ success: false, message: "Category not found" });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Category visibility updated successfully",
+            category 
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Toggle subcategory visibility in navigation
+const toggleSubcategoryVisibility = async (req, res) => {
+    try {
+        const { categoryId, subcategoryId, showInNavigation } = req.body;
+
+        const category = await categoryModel.findById(categoryId);
+        if (!category) {
+            return res.json({ success: false, message: "Category not found" });
+        }
+
+        const subcategory = category.subCategories.id(subcategoryId);
+        if (!subcategory) {
+            return res.json({ success: false, message: "Subcategory not found" });
+        }
+
+        subcategory.showInNavigation = showInNavigation;
+        await category.save();
+
+        res.json({ 
+            success: true, 
+            message: "Subcategory visibility updated successfully",
+            category 
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 export { 
     getCategories, 
     addCategory, 
@@ -199,5 +332,9 @@ export {
     deleteCategory, 
     addSubCategory, 
     removeSubCategory,
-    seedCategories 
+    seedCategories,
+    uploadCategoryImage,
+    uploadSubcategoryImage,
+    toggleCategoryVisibility,
+    toggleSubcategoryVisibility
 };

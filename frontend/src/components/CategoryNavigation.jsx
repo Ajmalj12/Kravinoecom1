@@ -41,6 +41,7 @@ const CategoryNavigation = () => {
   useEffect(() => {
     const fetchCategoriesAndSubcategories = async () => {
       try {
+        setLoading(true);
         const categoryResponse = await axios.get(`${backendUrl}/api/category/list`);
         let allItems = [];
         
@@ -49,50 +50,66 @@ const CategoryNavigation = () => {
           
           // Process each category and its subcategories
           categories.forEach(category => {
-            // Add main category
-            allItems.push({
-              name: category.name,
-              icon: getIconForCategory(category.name),
-              path: `/collection?category=${category.name.toLowerCase().replace(/\s+/g, '-')}`,
-              type: 'category'
-            });
+            // Only add category if it should be shown in navigation
+            if (category.showInNavigation !== false) {
+              allItems.push({
+                name: category.name,
+                icon: getIconForCategory(category.name),
+                image: category.image || null,
+                path: `/collection?category=${encodeURIComponent(category.name)}`,
+                type: 'category',
+                id: `category-${category._id || category.name}`
+              });
+            }
             
-            // Add subcategories if they exist
+            // Add subcategories if they exist and should be shown
             if (category.subCategories && category.subCategories.length > 0) {
               category.subCategories.forEach(subcat => {
-                allItems.push({
-                  name: subcat.name,
-                  icon: getIconForCategory(subcat.name),
-                  path: `/collection?subcategory=${subcat.name.toLowerCase().replace(/\s+/g, '-')}`,
-                  type: 'subcategory',
-                  parentCategory: category.name
-                });
+                if (subcat.showInNavigation !== false) {
+                  allItems.push({
+                    name: subcat.name,
+                    icon: getIconForCategory(subcat.name),
+                    image: subcat.image || null,
+                    path: `/collection?subcategory=${encodeURIComponent(subcat.name)}`,
+                    type: 'subcategory',
+                    parentCategory: category.name,
+                    id: `subcategory-${subcat._id || subcat.name}`
+                  });
+                }
               });
             }
           });
           
-          // Limit to 8 items total
-          setDisplayItems(allItems.slice(0, 8));
-          setCategories(categories);
+          // Use setTimeout to ensure state updates properly
+          setTimeout(() => {
+            setDisplayItems(allItems);
+            setCategories(categories);
+            setLoading(false);
+          }, 100);
+        } else {
+          setLoading(false);
         }
         
       } catch (error) {
         console.error('Error fetching categories:', error);
         // Fallback to default categories if API fails
         const fallbackData = [
-          { name: 'Fashion', icon: Shirt, path: '/collection?category=fashion', type: 'category' },
-          { name: 'Electronics', icon: Headphones, path: '/collection?category=electronics', type: 'category' },
-          { name: 'Home & Furniture', icon: Home, path: '/collection?category=home', type: 'category' },
-          { name: 'Beauty', icon: Gift, path: '/collection?category=beauty', type: 'category' },
+          { name: 'Fashion', icon: Shirt, path: '/collection?category=fashion', type: 'category', id: 'fallback-fashion' },
+          { name: 'Electronics', icon: Headphones, path: '/collection?category=electronics', type: 'category', id: 'fallback-electronics' },
+          { name: 'Home & Furniture', icon: Home, path: '/collection?category=home', type: 'category', id: 'fallback-home' },
+          { name: 'Beauty', icon: Gift, path: '/collection?category=beauty', type: 'category', id: 'fallback-beauty' },
         ];
-        setDisplayItems(fallbackData);
-      } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setDisplayItems(fallbackData);
+          setLoading(false);
+        }, 100);
       }
     };
 
     if (backendUrl) {
       fetchCategoriesAndSubcategories();
+    } else {
+      setLoading(false);
     }
   }, [backendUrl]);
 
@@ -114,24 +131,57 @@ const CategoryNavigation = () => {
   }
 
   return (
-    <div className="bg-white shadow-sm border-b border-gray-200">
-      <div className="w-full">
-        <div className="flex items-center justify-start py-3 overflow-x-auto w-full px-4">
+    <div className="bg-white shadow-lg border-b border-gray-100 relative z-50">
+      <div className="max-w-7xl mx-auto px-4 py-2 relative z-50">
+        <div className="flex items-center justify-center gap-4 overflow-x-auto scrollbar-hide relative z-50" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {displayItems.map((item, index) => {
             const IconComponent = item.icon;
             return (
-              <div
-                key={`${item.type}-${index}`}
-                onClick={() => navigate(item.path)}
-                className="flex flex-col items-center flex-1 min-w-[100px] p-2 cursor-pointer hover:bg-gray-50 transition-colors group"
+              <a
+                key={item.id || `${item.type}-${index}`}
+                href={item.path}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Category clicked:', item.name, 'Path:', item.path);
+                  window.location.href = item.path;
+                }}
+                className="flex flex-col items-center min-w-[90px] max-w-[90px] p-2 cursor-pointer hover:bg-gradient-to-b hover:from-gray-50 hover:to-gray-100 transition-all duration-300 group flex-shrink-0 rounded-xl hover:shadow-md transform hover:-translate-y-1 active:scale-95 no-underline relative z-50"
+                style={{ 
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 9999,
+                  pointerEvents: 'auto'
+                }}
               >
-                <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-full group-hover:bg-gray-200 transition-colors">
-                  <IconComponent size={24} className="text-gray-600" />
+                <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-full group-hover:from-blue-50 group-hover:to-blue-100 group-hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-gray-100 group-hover:border-blue-200 relative z-50">
+                  {item.image ? (
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="w-full h-full object-cover rounded-full relative z-50"
+                      draggable={false}
+                      style={{ pointerEvents: 'none' }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <IconComponent 
+                    size={26} 
+                    className={`text-gray-600 group-hover:text-blue-600 transition-colors duration-300 relative z-50 ${item.image ? 'hidden' : 'block'}`}
+                    style={{ pointerEvents: 'none' }}
+                  />
                 </div>
-                <span className="text-xs text-black mt-2 text-center leading-tight font-medium">
+                <span className="text-xs text-gray-700 mt-2 text-center font-medium group-hover:text-gray-900 transition-colors duration-300 max-w-full truncate whitespace-nowrap overflow-hidden relative z-50" style={{ pointerEvents: 'none' }}>
                   {item.name}
                 </span>
-              </div>
+              </a>
             );
           })}
         </div>

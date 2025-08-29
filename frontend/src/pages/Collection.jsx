@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
 import Title from "../components/Title";
@@ -6,12 +7,30 @@ import ProductItem from "../components/ProductItem";
 
 const Collection = () => {
   const { products, search, setSearch, categories } = useContext(ShopContext);
+  const location = useLocation();
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
   const [category, setCategory] = useState([]);
   const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState("relevant");
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableSubCategories, setAvailableSubCategories] = useState([]);
+
+  // Handle URL parameters for category/subcategory filtering
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const categoryParam = urlParams.get('category');
+    const subcategoryParam = urlParams.get('subcategory');
+
+    if (categoryParam) {
+      setCategory([decodeURIComponent(categoryParam)]);
+      setSubCategory([]); // Clear subcategory when category is set
+    } else if (subcategoryParam) {
+      setSubCategory([decodeURIComponent(subcategoryParam)]);
+      setCategory([]); // Clear category when subcategory is set
+    }
+  }, [location.search]);
 
   const toggleCategory = (e) => {
     if (category.includes(e.target.value)) {
@@ -66,6 +85,41 @@ const Collection = () => {
     }
   };
 
+  // Get categories and subcategories that have products
+  useEffect(() => {
+    if (products.length > 0) {
+      // Get unique categories from products
+      const productCategories = [...new Set(products.map(product => product.category))].filter(Boolean);
+      
+      // Filter backend categories to only show those with products
+      const categoriesWithProducts = categories.filter(cat => 
+        productCategories.includes(cat.name)
+      );
+      
+      setAvailableCategories(categoriesWithProducts);
+      
+      // Get unique subcategories from products
+      const productSubCategories = [...new Set(products.map(product => product.subCategory))].filter(Boolean);
+      
+      // Get all subcategories from backend categories that have products
+      const subCategoriesWithProducts = [];
+      categories.forEach(cat => {
+        if (cat.subCategories && cat.subCategories.length > 0) {
+          cat.subCategories.forEach(subCat => {
+            if (productSubCategories.includes(subCat.name)) {
+              subCategoriesWithProducts.push({
+                ...subCat,
+                parentCategory: cat.name
+              });
+            }
+          });
+        }
+      });
+      
+      setAvailableSubCategories(subCategoriesWithProducts);
+    }
+  }, [products, categories]);
+
   // Apply filter and sort
   useEffect(() => {
     let productsCopy = products.slice();
@@ -115,20 +169,29 @@ const Collection = () => {
           <div className="border border-gray-200 pl-5 py-4 mt-3 sm:mt-6 rounded-lg shadow-sm bg-white">
             <p className="mb-3 text-sm font-semibold text-black">CATEGORIES</p>
             <div className="flex flex-col gap-3 text-sm text-gray-700">
-              {categories.map((cat) => (
-                <p key={cat._id} className="flex gap-2">
-                  <input
-                    className="w-3"
-                    type="checkbox"
-                    value={cat.name}
-                    onChange={toggleCategory}
-                    id={`category-${cat._id}`}
-                  />
-                  <label htmlFor={`category-${cat._id}`} className="cursor-pointer hover:text-black transition-colors">
-                    {cat.name}
-                  </label>
-                </p>
-              ))}
+              {availableCategories.map((cat) => {
+                const productCount = products.filter(product => product.category === cat.name).length;
+                return (
+                  <p key={cat._id} className="flex gap-2 justify-between items-center">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        className="w-3"
+                        type="checkbox"
+                        value={cat.name}
+                        onChange={toggleCategory}
+                        id={`category-${cat._id}`}
+                        checked={category.includes(cat.name)}
+                      />
+                      <label htmlFor={`category-${cat._id}`} className="cursor-pointer hover:text-black transition-colors">
+                        {cat.name}
+                      </label>
+                    </div>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      {productCount}
+                    </span>
+                  </p>
+                );
+              })}
             </div>
           </div>
 
@@ -136,22 +199,29 @@ const Collection = () => {
           <div className="border border-gray-200 pl-5 py-4 my-3 sm:my-5 rounded-lg shadow-sm bg-white">
             <p className="mb-3 text-sm font-semibold text-black">TYPE</p>
             <div className="flex flex-col gap-3 text-sm text-gray-700 max-h-48 overflow-y-auto">
-              {categories.map((cat) => 
-                cat.subCategories?.map((sub) => (
-                  <p key={`${cat._id}-${sub._id}`} className="flex gap-2">
-                    <input
-                      className="w-3"
-                      type="checkbox"
-                      value={sub.name}
-                      onChange={toggleSubCategory}
-                      id={`subcategory-${sub._id}`}
-                    />
-                    <label htmlFor={`subcategory-${sub._id}`} className="cursor-pointer hover:text-black transition-colors">
-                      {sub.name}
-                    </label>
+              {availableSubCategories.map((sub) => {
+                const productCount = products.filter(product => product.subCategory === sub.name).length;
+                return (
+                  <p key={`${sub.parentCategory}-${sub._id}`} className="flex gap-2 justify-between items-center">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        className="w-3"
+                        type="checkbox"
+                        value={sub.name}
+                        onChange={toggleSubCategory}
+                        id={`subcategory-${sub._id}`}
+                        checked={subCategory.includes(sub.name)}
+                      />
+                      <label htmlFor={`subcategory-${sub._id}`} className="cursor-pointer hover:text-black transition-colors">
+                        {sub.name}
+                      </label>
+                    </div>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      {productCount}
+                    </span>
                   </p>
-                ))
-              )}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -196,7 +266,7 @@ const Collection = () => {
         </div>
 
         {/* MAP PRODUCTS */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
           {filterProducts.length > 0 ? (
             filterProducts.map((item, i) => (
               <ProductItem

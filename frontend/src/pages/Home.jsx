@@ -5,11 +5,12 @@ import HeroBanner from "../components/HeroBanner";
 import TopBanner from "../components/TopBanner";
 import MiddleBanner from "../components/MiddleBanner";
 import ProductSection from "../components/ProductSection";
+import RecentlyViewed from "../components/RecentlyViewed";
 import OurPolicy from "../components/OurPolicy";
 import NewsletterBox from "../components/NewsletterBox";
 
 const Home = () => {
-  const { products } = useContext(ShopContext);
+  const { products, pageContent } = useContext(ShopContext);
 
   // Filter products for different sections
   const latestProducts = products.slice(0, 10);
@@ -22,7 +23,7 @@ const Home = () => {
       <HeroBanner />
       
       <ProductSection
-        title="Latest Collection"
+        title={pageContent?.products?.latestCollectionTitle || "Latest Collection"}
         products={latestProducts}
         viewAllLink="/collection"
         fullWidth={true}
@@ -31,20 +32,26 @@ const Home = () => {
       <TopBanner />
 
       <ProductSection
-        title="Live Offers"
+        title={pageContent?.products?.liveOffersTitle || "Live Offers"}
         products={liveOffers}
         viewAllLink="/collection?discount=true"
         fullWidth={true}
+        isLiveOffers={true}
       />
 
       <MiddleBanner />
       
       <ProductSection
-        title="Best Sellers"
+        title={pageContent?.products?.bestSellersTitle || "Best Sellers"}
         products={bestSellers}
         viewAllLink="/collection?bestseller=true"
         fullWidth={true}
       />
+
+      {/* Recently Viewed Products */}
+      <div className="bg-white">
+        <RecentlyViewed maxItems={8} />
+      </div>
       
       <div className="bg-white mt-8">
         <OurPolicy />

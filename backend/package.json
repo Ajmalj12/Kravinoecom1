@@ -23,6 +23,8 @@
     "nodemon": "^3.1.7",
     "razorpay": "^2.9.4",
     "stripe": "^17.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "validator": "^13.12.0"
   }
 }
