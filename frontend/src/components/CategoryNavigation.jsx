@@ -133,7 +133,12 @@ const CategoryNavigation = () => {
   return (
     <div className="bg-white shadow-lg border-b border-gray-100 relative z-50">
       <div className="max-w-7xl mx-auto px-4 py-2 relative z-50">
-        <div className="flex items-center justify-center gap-4 overflow-x-auto scrollbar-hide relative z-50" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="flex items-center justify-start sm:justify-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide relative z-50 pb-1" 
+             style={{ 
+               scrollbarWidth: 'none', 
+               msOverflowStyle: 'none',
+               WebkitOverflowScrolling: 'touch'
+             }}>
           {displayItems.map((item, index) => {
             const IconComponent = item.icon;
             return (
@@ -146,7 +151,7 @@ const CategoryNavigation = () => {
                   console.log('Category clicked:', item.name, 'Path:', item.path);
                   window.location.href = item.path;
                 }}
-                className="flex flex-col items-center min-w-[90px] max-w-[90px] p-2 cursor-pointer hover:bg-gradient-to-b hover:from-gray-50 hover:to-gray-100 transition-all duration-300 group flex-shrink-0 rounded-xl hover:shadow-md transform hover:-translate-y-1 active:scale-95 no-underline relative z-50"
+                className="flex flex-col items-center min-w-[75px] max-w-[75px] sm:min-w-[90px] sm:max-w-[90px] p-1.5 sm:p-2 cursor-pointer hover:bg-gradient-to-b hover:from-gray-50 hover:to-gray-100 transition-all duration-300 group flex-shrink-0 rounded-xl hover:shadow-md transform hover:-translate-y-1 active:scale-95 no-underline relative z-50"
                 style={{ 
                   textDecoration: 'none',
                   color: 'inherit',
@@ -158,7 +163,7 @@ const CategoryNavigation = () => {
                   pointerEvents: 'auto'
                 }}
               >
-                <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-full group-hover:from-blue-50 group-hover:to-blue-100 group-hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-gray-100 group-hover:border-blue-200 relative z-50">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-full group-hover:from-blue-50 group-hover:to-blue-100 group-hover:shadow-lg transition-all duration-300 overflow-hidden border-2 border-gray-100 group-hover:border-blue-200 relative z-50">
                   {item.image ? (
                     <img 
                       src={item.image} 
@@ -173,12 +178,12 @@ const CategoryNavigation = () => {
                     />
                   ) : null}
                   <IconComponent 
-                    size={26} 
+                    size={window.innerWidth < 640 ? 20 : 26} 
                     className={`text-gray-600 group-hover:text-blue-600 transition-colors duration-300 relative z-50 ${item.image ? 'hidden' : 'block'}`}
                     style={{ pointerEvents: 'none' }}
                   />
                 </div>
-                <span className="text-xs text-gray-700 mt-2 text-center font-medium group-hover:text-gray-900 transition-colors duration-300 max-w-full truncate whitespace-nowrap overflow-hidden relative z-50" style={{ pointerEvents: 'none' }}>
+                <span className="text-xs sm:text-xs text-gray-700 mt-1 sm:mt-2 text-center font-medium group-hover:text-gray-900 transition-colors duration-300 max-w-full truncate whitespace-nowrap overflow-hidden relative z-50" style={{ pointerEvents: 'none' }}>
                   {item.name}
                 </span>
               </a>
